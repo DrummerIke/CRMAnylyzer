@@ -2,288 +2,344 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BORK Data Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
+<title>BORK CRM Filter</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-body {font-family: Arial; background:#2f2a28; color:#fff; padding:20px;}
-button{padding:10px;margin:5px;cursor:pointer;}
-input,select{padding:8px;margin:5px;}
-.condition-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;}
-table{width:100%;margin-top:10px;border-collapse:collapse;}
-td,th{border:1px solid #555;padding:5px;}
+body{
+  margin:0;
+  font-family:Nunito;
+  background:#2f2623;
+  color:#fff;
+  padding:20px;
+}
+
+h2{margin:10px 0;}
+
+button{
+  background:linear-gradient(180deg,#ef6f2e,#d85d22);
+  border:none;
+  border-radius:14px;
+  color:#fff;
+  padding:10px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+button:hover{opacity:.9}
+
+input,select{
+  background:#3a2f2c;
+  border:1px solid rgba(255,255,255,.1);
+  color:#fff;
+  border-radius:10px;
+  padding:8px;
+}
+
+.condition-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  background:rgba(255,255,255,.03);
+  padding:8px;
+  border-radius:12px;
+  margin-bottom:6px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+td,th{
+  border:1px solid rgba(255,255,255,.1);
+  padding:6px;
+  font-size:12px;
+}
+th{background:#ef6f2e}
 </style>
 </head>
 
 <body>
 
-<h2>Фильтр базы</h2>
+<h2>📊 BORK CRM Filter</h2>
 
 <input type="file" id="fileInput">
 
+<hr>
+
 <div id="conditions"></div>
-<button id="addCondition">+ Условие</button>
+<button onclick="addCondition()">+ Условие</button>
 
-<br>
+<hr>
 
+<label>Группировка</label>
 <select id="groupCol"></select>
+
+<label>Сортировка</label>
 <select id="sortCol"></select>
 
-<input type="number" id="nLimit" value="100">
+<label>Лимит</label>
+<input type="number" id="limit" value="100">
 
-<select id="orderType">
-<option value="top">TOP</option>
-<option value="bottom">BOTTOM</option>
-</select>
+<button onclick="applyFilters()">🔍 Применить</button>
 
-<br>
+<button onclick="saveFilters()">💾 Сохранить фильтр</button>
+<button onclick="loadFilters()">📂 Загрузить</button>
 
-<button id="applyBtn">Применить</button>
-<button id="saveFilters">Сохранить</button>
-<button id="loadFilters">Загрузить</button>
+<hr>
 
-<br>
+<button onclick="smsExport()">📲 SMS база</button>
+<button onclick="autoDistribute()">⚡ Автораспределение</button>
 
-<button id="smsBtn">SMS база</button>
-<button id="autoDistributeBtn">Распределить</button>
+<div id="limits"></div>
 
 <div id="preview"></div>
-<div id="employeeLimits"></div>
 
-<script type="module">
+<script>
+let data = [];
+let columns = [];
+let result = [];
 
-import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/duckdb-browser-async.mjs';
 
-let db, conn;
-let columns=[];
-let resultTable=null;
-
-// INIT
-(async ()=>{
- const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
- const worker = new Worker(bundle.mainWorker);
- db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
- await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
- conn = await db.connect();
-})();
-
-// LOAD FILE
+// ================= LOAD =================
 fileInput.onchange = async (e)=>{
- const file=e.target.files[0];
- const buffer=new Uint8Array(await file.arrayBuffer());
- await db.registerFileBuffer(file.name, buffer);
+  const file = e.target.files[0];
+  const buffer = await file.arrayBuffer();
 
- if(file.name.endsWith('.csv')){
-  await conn.query(`CREATE TABLE data AS SELECT * FROM read_csv_auto('${file.name}',sample_size=-1)`);
- }else{
-  await conn.query(`CREATE TABLE data AS SELECT * FROM read_xlsx('${file.name}')`);
- }
+  let json;
 
- const meta = await conn.query("SELECT column_name FROM information_schema.columns WHERE table_name='data'");
- columns = meta.toArray().map(r=>r.column_name);
+  if(file.name.endsWith('.xlsx')){
+    const wb = XLSX.read(buffer,{type:'array'});
+    json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  } else {
+    const text = new TextDecoder().decode(buffer);
+    const wb = XLSX.read(text,{type:'string'});
+    json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  }
 
- fillSelects();
- addCondition();
+  data = json;
+  columns = Object.keys(json[0]||{});
+
+  fillSelects();
+  addCondition();
 };
 
-// SELECTS
+
+// ================= UI =================
 function fillSelects(){
- ['groupCol','sortCol'].forEach(id=>{
-  const el=document.getElementById(id);
-  el.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
- });
+  groupCol.innerHTML =
+  sortCol.innerHTML =
+  columns.map(c=>`<option>${c}</option>`).join('');
 }
 
-// CONDITIONS
 function addCondition(){
- const row=document.createElement('div');
- row.className='condition-row';
+  const div=document.createElement('div');
+  div.className='condition-row';
 
- row.innerHTML=`
- <select class="col-select"></select>
- <select class="op-select">
- <option value="=">=</option>
- <option value="!=">≠</option>
- <option value=">">></option>
- <option value="<"><</option>
- <option value="contains">Содержит</option>
- </select>
- <input class="val-input">
- <button class="remove">x</button>
- `;
+  div.innerHTML=`
+    <select class="col"></select>
+    <select class="op">
+      <option>=</option>
+      <option>!=</option>
+      <option>></option>
+      <option><</option>
+      <option value="contains">contains</option>
+    </select>
+    <input class="val">
+    <button onclick="this.parentElement.remove()">x</button>
+  `;
 
- document.getElementById('conditions').appendChild(row);
+  conditions.appendChild(div);
 
- row.querySelector('.remove').onclick=()=>row.remove();
-
- updateCols();
+  updateCols();
 }
-
-addConditionBtn.onclick=addCondition;
 
 function updateCols(){
- document.querySelectorAll('.col-select').forEach(s=>{
-  s.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
- });
-}
-
-// APPLY
-applyBtn.onclick = async ()=>{
- let where=[];
-
- document.querySelectorAll('.condition-row').forEach(r=>{
-  const c=r.querySelector('.col-select').value;
-  const o=r.querySelector('.op-select').value;
-  const v=r.querySelector('.val-input').value;
-
-  if(!c||!v)return;
-
-  if(o==='contains'){
-   where.push(`CAST("${c}" AS VARCHAR) ILIKE '%${v}%'`);
-  }else{
-   where.push(`CAST("${c}" AS VARCHAR) ${o} '${v}'`);
-  }
- });
-
- const sql=`SELECT * FROM data ${where.length?'WHERE '+where.join(' AND '):''}`;
- const res=await conn.query(sql);
-
- resultTable=res;
-
- render(res.toArray());
-};
-
-// RENDER
-function render(rows){
- if(!rows.length)return;
-
- let keys=Object.keys(rows[0]);
- let html='<table><tr>';
-
- keys.forEach(k=>html+=`<th>${k}</th>`);
- html+='</tr>';
-
- rows.slice(0,100).forEach(r=>{
-  html+='<tr>';
-  keys.forEach(k=>html+=`<td>${r[k]}</td>`);
-  html+='</tr>';
- });
-
- html+='</table>';
-
- preview.innerHTML=html;
-
- buildEmployeeLimits(rows);
-}
-
-// LIMITS
-function buildEmployeeLimits(rows){
- const group=groupCol.value;
- let map={};
-
- rows.forEach(r=>{
-  const k=r[group];
-  map[k]=(map[k]||0)+1;
- });
-
- let html='';
-
- Object.entries(map).forEach(([k,v])=>{
-  html+=`${k} (${v}) <input type="number" value="${v}" data-name="${k}" class="emp-limit"><br>`;
- });
-
- employeeLimits.innerHTML=html;
-}
-
-// AUTO DISTRIBUTE
-autoDistributeBtn.onclick = ()=>{
- const rows=resultTable.toArray();
- const group=groupCol.value;
-
- let limits={};
- document.querySelectorAll('.emp-limit').forEach(i=>{
-  limits[i.dataset.name]=parseInt(i.value);
- });
-
- let managers=Object.keys(limits);
- let counters={};
- managers.forEach(m=>counters[m]=0);
-
- let result=[];
- let i=0;
-
- rows.forEach(r=>{
-  let tries=0;
-
-  while(tries<managers.length){
-   let m=managers[i];
-
-   if(counters[m]<limits[m]){
-    let newRow={...r};
-    newRow[group]=m;
-    result.push(newRow);
-    counters[m]++;
-    i=(i+1)%managers.length;
-    break;
-   }
-
-   i=(i+1)%managers.length;
-   tries++;
-  }
- });
-
- render(result);
-
- resultTable={
-  toArray:()=>result,
-  getChild:(col)=>({toArray:()=>result.map(r=>r[col])})
- };
-};
-
-// SMS
-smsBtn.onclick=()=>{
- const col=groupCol.value;
-
- const nums=resultTable.getChild(col).toArray()
- .map(v=>String(v).replace(/\D/g,''))
- .filter(v=>v.length>9);
-
- const blob=new Blob([nums.join('\n')]);
- const a=document.createElement('a');
- a.href=URL.createObjectURL(blob);
- a.download='sms.txt';
- a.click();
-};
-
-// SAVE
-saveFilters.onclick=()=>{
- let arr=[];
- document.querySelectorAll('.condition-row').forEach(r=>{
-  arr.push({
-   c:r.querySelector('.col-select').value,
-   o:r.querySelector('.op-select').value,
-   v:r.querySelector('.val-input').value
+  document.querySelectorAll('.col').forEach(s=>{
+    s.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
   });
- });
- localStorage.setItem('filters',JSON.stringify(arr));
-};
+}
 
-// LOAD
-loadFilters.onclick=()=>{
- let arr=JSON.parse(localStorage.getItem('filters')||'[]');
- conditions.innerHTML='';
- arr.forEach(f=>{
-  addCondition();
-  let rows=document.querySelectorAll('.condition-row');
-  let last=rows[rows.length-1];
 
-  last.querySelector('.col-select').value=f.c;
-  last.querySelector('.op-select').value=f.o;
-  last.querySelector('.val-input').value=f.v;
- });
-};
+// ================= FILTER =================
+function applyFilters(){
+
+  let conds=[];
+
+  document.querySelectorAll('.condition-row').forEach(r=>{
+    const c=r.querySelector('.col').value;
+    const o=r.querySelector('.op').value;
+    const v=r.querySelector('.val').value;
+
+    if(!c||!v)return;
+
+    conds.push({c,o,v});
+  });
+
+  result = data.filter(row=>{
+    return conds.every(f=>{
+      const val = row[f.c];
+
+      if(f.o==="contains")
+        return String(val).toLowerCase().includes(f.v.toLowerCase());
+
+      if(f.o===">")
+        return Number(val)>Number(f.v);
+
+      if(f.o==="<")
+        return Number(val)<Number(f.v);
+
+      if(f.o==="!=")
+        return val!=f.v;
+
+      return val==f.v;
+    });
+  });
+
+  render(result);
+  buildLimits(result);
+}
+
+
+// ================= RENDER =================
+function render(rows){
+
+  if(!rows.length)return;
+
+  const keys=Object.keys(rows[0]);
+
+  let html="<table><tr>"+keys.map(k=>`<th>${k}</th>`).join("")+"</tr>";
+
+  rows.slice(0,100).forEach(r=>{
+    html+="<tr>"+keys.map(k=>`<td>${r[k]??""}</td>`).join("")+"</tr>";
+  });
+
+  html+="</table>";
+
+  preview.innerHTML=html;
+}
+
+
+// ================= LIMITS =================
+function buildLimits(rows){
+
+  const col = groupCol.value;
+  let map={};
+
+  rows.forEach(r=>{
+    const k=r[col];
+    map[k]=(map[k]||0)+1;
+  });
+
+  limits.innerHTML =
+    Object.entries(map).map(([k,v])=>
+      `${k} (${v}) <input data-k="${k}" type="number" value="${v}"><br>`
+    ).join('');
+}
+
+
+// ================= AUTO DISTRIBUTE =================
+function autoDistribute(){
+
+  const col = groupCol.value;
+
+  let limits={};
+  document.querySelectorAll('#limits input').forEach(i=>{
+    limits[i.dataset.k]=+i.value;
+  });
+
+  let counters={};
+  let managers=Object.keys(limits);
+  managers.forEach(m=>counters[m]=0);
+
+  let res=[];
+  let i=0;
+
+  result.forEach(r=>{
+
+    let tries=0;
+
+    while(tries<managers.length){
+      let m=managers[i];
+
+      if(counters[m]<limits[m]){
+        let nr={...r};
+        nr[col]=m;
+
+        res.push(nr);
+        counters[m]++;
+
+        i=(i+1)%managers.length;
+        break;
+      }
+
+      i=(i+1)%managers.length;
+      tries++;
+    }
+
+  });
+
+  result=res;
+  render(res);
+}
+
+
+// ================= SMS =================
+function smsExport(){
+
+  const col = groupCol.value;
+
+  const nums=result
+    .map(r=>String(r[col]).replace(/\D/g,''))
+    .filter(v=>v.length>9);
+
+  const blob=new Blob([nums.join("\n")]);
+  const a=document.createElement("a");
+
+  a.href=URL.createObjectURL(blob);
+  a.download="sms.txt";
+  a.click();
+}
+
+
+// ================= SAVE / LOAD =================
+function saveFilters(){
+
+  let f=[];
+
+  document.querySelectorAll('.condition-row').forEach(r=>{
+    f.push({
+      c:r.querySelector('.col').value,
+      o:r.querySelector('.op').value,
+      v:r.querySelector('.val').value
+    });
+  });
+
+  localStorage.setItem("filters",JSON.stringify(f));
+}
+
+function loadFilters(){
+
+  let f=JSON.parse(localStorage.getItem("filters")||"[]");
+
+  conditions.innerHTML="";
+
+  f.forEach(x=>{
+    addCondition();
+    let r=document.querySelectorAll('.condition-row');
+    let last=r[r.length-1];
+
+    last.querySelector('.col').value=x.c;
+    last.querySelector('.op').value=x.o;
+    last.querySelector('.val').value=x.v;
+  });
+}
 
 </script>
 
