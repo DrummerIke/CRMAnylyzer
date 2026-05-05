@@ -4,400 +4,318 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Операционный центр</title>
+<title>Compas Операционный Центр</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
 body{
   margin:0;
-  font-family:Nunito;
+  font-family:Arial;
   background:#2f2623;
   color:#fff;
-  padding:18px;
+  padding:16px;
 }
 
 h2{margin:10px 0;}
 
-button{
-  background:linear-gradient(180deg,#ef6f2e,#d85d22);
-  border:none;
-  border-radius:14px;
-  padding:10px 14px;
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-  margin:4px;
-}
-
-input,select{
-  background:#3b2f2b;
-  border:1px solid rgba(255,255,255,.1);
-  color:#fff;
-  padding:8px;
-  border-radius:10px;
-  margin:3px;
-}
-
 .panel{
-  background:rgba(255,255,255,0.03);
-  padding:10px;
-  border-radius:14px;
-  margin:10px 0;
+  background:rgba(255,255,255,0.04);
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:12px;
 }
 
-.condition-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  padding:6px;
-  background:rgba(255,255,255,0.04);
+button{
+  background:#ef6f2e;
+  color:#fff;
+  border:none;
+  padding:10px 14px;
   border-radius:10px;
-  margin-bottom:6px;
+  cursor:pointer;
+  font-weight:700;
+  margin:4px 0;
+}
+
+input{
+  padding:6px;
+  border-radius:8px;
+  border:1px solid #444;
+  background:#3a2f2b;
+  color:#fff;
+}
+
+.checkbox-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  font-size:12px;
 }
 
 table{
   width:100%;
   border-collapse:collapse;
   margin-top:10px;
+  font-size:12px;
 }
 
 td,th{
-  border:1px solid rgba(255,255,255,.1);
-  padding:6px;
-  font-size:12px;
+  border:1px solid #444;
+  padding:4px;
 }
 
 th{
   background:#ef6f2e;
 }
 </style>
-
 </head>
 
 <body>
 
-<h2>⚙️ ОПЕРАЦИОННЫЙ ЦЕНТР</h2>
+<h2>⚙️ COMPAS ОПЕРАЦИОННЫЙ ЦЕНТР</h2>
 
-<!-- LOAD -->
 <div class="panel">
-  <input type="file" id="fileInput">
+<input type="file" id="fileInput">
 </div>
 
-<!-- SEGMENTS -->
+<!-- СЕГМЕНТЫ -->
 <div class="panel">
-  <h3>📊 Сегменты</h3>
-  <button onclick="setSegment('all')">Все</button>
-  <button onclick="setSegment('no_contact')">Нет контакта 30+ дней</button>
-  <button onclick="setSegment('high_turnover')">Высокий оборот</button>
+<h3>📊 Сегменты</h3>
+<div id="segments" class="checkbox-grid"></div>
+<button onclick="applySegments()">Применить сегменты</button>
 </div>
 
-<!-- FILTERS -->
+<!-- РАСПРЕДЕЛЕНИЕ -->
 <div class="panel">
-  <h3>🔎 Фильтры</h3>
-  <div id="conditions"></div>
-  <button onclick="addCondition()">+ Условие</button>
-  <button onclick="applyFilters()">Применить</button>
+<h3>👥 Сотрудники</h3>
+<div id="staff"></div>
+<button onclick="distribute()">⚡ Распределить задачи</button>
 </div>
 
-<!-- OPS -->
+<!-- ВЫГРУЗКА -->
 <div class="panel">
-  <h3>👥 Управление задачами</h3>
-
-  <label>Группа сотрудников</label>
-  <select id="groupCol"></select>
-
-  <label>Сортировка</label>
-  <select id="sortCol"></select>
-
-  <button onclick="autoDistribute()">⚡ Автораспределение</button>
-
-  <div id="limits"></div>
-</div>
-
-<!-- EXPORT -->
-<div class="panel">
-  <h3>📲 Выгрузка</h3>
-  <button onclick="smsExport()">SMS база</button>
-  <button onclick="saveFilters()">💾 Сохранить</button>
-  <button onclick="loadFilters()">📂 Загрузить</button>
+<h3>📲 Compas выгрузка</h3>
+<button onclick="exportPhones()">Скачать телефоны (.txt)</button>
 </div>
 
 <div id="preview"></div>
 
 <script>
 
-let data=[];
-let filtered=[];
-let columns=[];
+let data = [];
+let filtered = [];
 
-// ================= LOAD =================
+let PHONE_FIELD = null;
+let EMPLOYEE_FIELD = null;
+let SEGMENT_FIELD = null;
+
+// ================= СЕГМЕНТЫ =================
+const SEGMENTS = [
+"none",
+"Без анкеты",
+"Искра_Корпоративные",
+"Искра_Ушедшие",
+"Искра_Спящие",
+"Искра_Активные",
+"Новички_Корпоративные",
+"Новички_Ушедшие",
+"Новички_Спящие",
+"Новички_Активные",
+"Знакомые_Корпоративные",
+"Знакомые_Ушедшие",
+"Знакомые_Спящие",
+"Знакомые_Активные",
+"Друзья_Корпоративные",
+"Друзья_Ушедшие",
+"Друзья_Спящие",
+"Друзья_Активные",
+"Семья_Корпоративные",
+"Семья_Ушедшие",
+"Семья_Спящие",
+"Семья_Активные",
+"VIC_Корпоративные",
+"VIC_Ушедшие",
+"VIC_Спящие",
+"VIC_Активные"
+];
+
+// ================= ЗАГРУЗКА =================
 fileInput.onchange = async (e)=>{
-  const file=e.target.files[0];
-  const buf=await file.arrayBuffer();
 
-  const wb=XLSX.read(buf,{type:'array'});
-  const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  const file = e.target.files[0];
+  const buf = await file.arrayBuffer();
 
-  data=json.map(normalize);
+  const wb = XLSX.read(buf,{type:'array'});
+  const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-  columns=Object.keys(data[0]||{});
+  data = json;
 
-  groupCol.innerHTML=
-  sortCol.innerHTML=
-  columns.map(c=>`<option>${c}</option>`).join('');
+  const keys = Object.keys(data[0] || {});
 
-  addCondition();
+  PHONE_FIELD = keys.find(k =>
+    k.toLowerCase().includes("тел") ||
+    k.toLowerCase().includes("phone")
+  );
+
+  EMPLOYEE_FIELD = keys.find(k =>
+    k.toLowerCase().includes("сотрудник")
+  );
+
+  SEGMENT_FIELD = keys.find(k =>
+    k.toLowerCase().includes("сегмент")
+  );
+
+  buildSegments();
+  buildStaff();
+
+  render(data);
 };
 
-// ================= NORMALIZE =================
-function normalize(r){
-  let o={};
+// ================= СЕГМЕНТЫ UI =================
+function buildSegments(){
 
-  for(let k in r){
-    let v=r[k];
+  segments.innerHTML = SEGMENTS.map(s=>`
+    <label>
+      <input type="checkbox" value="${s}">
+      ${s}
+    </label>
+  `).join('');
+}
 
-    // DATE
-    if(k.toLowerCase().includes("дата")){
-      const d=new Date(v);
-      if(!isNaN(d)){
-        v=
-        String(d.getDate()).padStart(2,'0')+"."+
-        String(d.getMonth()+1).padStart(2,'0')+"."+
-        d.getFullYear();
+// ================= СОТРУДНИКИ =================
+function buildStaff(){
+
+  if(!EMPLOYEE_FIELD) return;
+
+  let map = {};
+
+  data.forEach(r=>{
+    let s = r[EMPLOYEE_FIELD] || "—";
+    map[s] = (map[s] || 0) + 1;
+  });
+
+  staff.innerHTML = Object.entries(map).map(([k,v])=>`
+    <div>
+      ${k} (${v})
+      <input type="number" value="${v}" data-s="${k}">
+    </div>
+  `).join('');
+}
+
+// ================= СЕГМЕНТЫ =================
+function applySegments(){
+
+  const selected = [...document.querySelectorAll('#segments input:checked')]
+    .map(i=>i.value);
+
+  if(selected.length === 0 || selected.includes("none")){
+    filtered = [...data];
+    render(filtered);
+    return;
+  }
+
+  filtered = data.filter(r =>
+    selected.includes(r[SEGMENT_FIELD])
+  );
+
+  render(filtered);
+}
+
+// ================= РАСПРЕДЕЛЕНИЕ =================
+function distribute(){
+
+  if(!EMPLOYEE_FIELD) return;
+
+  const inputs = document.querySelectorAll('#staff input');
+
+  let limits = {};
+  inputs.forEach(i=>{
+    limits[i.dataset.s] = +i.value;
+  });
+
+  let counters = {};
+  Object.keys(limits).forEach(s=>counters[s]=0);
+
+  const staff = Object.keys(limits);
+
+  let i = 0;
+
+  filtered.forEach(r=>{
+
+    let tries = 0;
+
+    while(tries < staff.length){
+
+      let s = staff[i];
+
+      if(counters[s] < limits[s]){
+
+        r[EMPLOYEE_FIELD] = s;
+        counters[s]++;
+
+        i = (i+1) % staff.length;
+        break;
       }
+
+      i = (i+1) % staff.length;
+      tries++;
     }
 
-    // PHONE
-    if(k.toLowerCase().includes("тел")){
-      v=String(v).replace(/\D/g,'');
-    }
-
-    o[k]=v;
-  }
-
-  return o;
-}
-
-// ================= CONDITIONS =================
-function addCondition(){
-  const div=document.createElement('div');
-  div.className='condition-row';
-
-  div.innerHTML=`
-  <select class="col"></select>
-  <select class="op">
-    <option>=</option>
-    <option>!=</option>
-    <option>></option>
-    <option><</option>
-    <option value="contains">contains</option>
-  </select>
-  <input class="val">
-  <button onclick="this.parentElement.remove()">x</button>
-  `;
-
-  conditions.appendChild(div);
-  updateCols();
-}
-
-function updateCols(){
-  document.querySelectorAll('.col').forEach(s=>{
-    s.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
-  });
-}
-
-// ================= FILTER =================
-function applyFilters(){
-
-  let conds=[];
-
-  document.querySelectorAll('.condition-row').forEach(r=>{
-    conds.push({
-      c:r.querySelector('.col').value,
-      o:r.querySelector('.op').value,
-      v:r.querySelector('.val').value
-    });
-  });
-
-  filtered=data.filter(row=>{
-    return conds.every(f=>{
-      let v=row[f.c];
-
-      if(f.o==="contains")
-        return String(v).toLowerCase().includes(f.v.toLowerCase());
-
-      if(f.o===">")
-        return Number(v)>Number(f.v);
-
-      if(f.o==="<")
-        return Number(v)<Number(f.v);
-
-      if(f.o==="!=")
-        return v!=f.v;
-
-      return v==f.v;
-    });
   });
 
   render(filtered);
-  buildLimits(filtered);
 }
 
-// ================= SEGMENTS =================
-function setSegment(type){
+// ================= ВЫГРУЗКА =================
+function exportPhones(){
 
-  if(type==="all"){
-    filtered=[...data];
+  if(!PHONE_FIELD){
+    alert("Поле телефона не найдено");
+    return;
   }
 
-  if(type==="no_contact"){
-    filtered=data.filter(r=>{
-      let d=new Date(r["Дата последнего контакта"]);
-      let limit=new Date();
-      limit.setDate(limit.getDate()-30);
-      return d<limit;
-    });
+  const phones = filtered
+    .map(r => String(r[PHONE_FIELD] || "").replace(/\D/g,''))
+    .filter(v => v.length >= 10);
+
+  const unique = [...new Set(phones)];
+
+  if(unique.length === 0){
+    alert("Нет номеров для выгрузки");
+    return;
   }
 
-  if(type==="high_turnover"){
-    filtered=[...data]
-      .sort((a,b)=>Number(b["Оборот"]||0)-Number(a["Оборот"]||0))
-      .slice(0,500);
-  }
+  const blob = new Blob([unique.join("\n")], {type:"text/plain"});
 
-  render(filtered);
-  buildLimits(filtered);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "compas_phones.txt";
+  a.click();
 }
 
 // ================= RENDER =================
 function render(rows){
 
-  if(!rows.length)return;
+  if(!rows.length){
+    preview.innerHTML = "<p>Нет данных</p>";
+    return;
+  }
 
-  let keys=Object.keys(rows[0]);
+  const keys = Object.keys(rows[0]);
 
-  let html="<table><tr>"+keys.map(k=>`<th>${k}</th>`).join("")+"</tr>";
+  let html = "<table><tr>" +
+    keys.map(k=>`<th>${k}</th>`).join("") +
+    "</tr>";
 
   rows.slice(0,100).forEach(r=>{
-    html+="<tr>"+keys.map(k=>`<td>${r[k]||""}</td>`).join("")+"</tr>";
+    html += "<tr>" +
+      keys.map(k=>`<td>${r[k] ?? ""}</td>`).join("") +
+      "</tr>";
   });
 
-  html+="</table>";
+  html += "</table>";
 
-  preview.innerHTML=html;
-}
-
-// ================= LIMITS =================
-function buildLimits(rows){
-
-  const col=groupCol.value;
-
-  let map={};
-
-  rows.forEach(r=>{
-    map[r[col]]=(map[r[col]]||0)+1;
-  });
-
-  limits.innerHTML=
-  Object.entries(map).map(([k,v])=>
-    `${k} (${v}) <input data-k="${k}" type="number" value="${v}"><br>`
-  ).join('');
-}
-
-// ================= AUTO DISTRIBUTE =================
-function autoDistribute(){
-
-  const col=groupCol.value;
-
-  let limits={};
-
-  document.querySelectorAll('#limits input').forEach(i=>{
-    limits[i.dataset.k]=+i.value;
-  });
-
-  let managers=Object.keys(limits);
-  let counters={};
-
-  managers.forEach(m=>counters[m]=0);
-
-  let i=0;
-
-  filtered.forEach(r=>{
-
-    let tries=0;
-
-    while(tries<managers.length){
-
-      let m=managers[i];
-
-      if(counters[m]<limits[m]){
-        r[col]=m;
-        counters[m]++;
-        i=(i+1)%managers.length;
-        break;
-      }
-
-      i=(i+1)%managers.length;
-      tries++;
-    }
-  });
-
-  render(filtered);
-}
-
-// ================= SMS =================
-function smsExport(){
-
-  const col=groupCol.value;
-
-  const nums=filtered
-    .map(r=>String(r[col]).replace(/\D/g,''))
-    .filter(v=>v.length>=10);
-
-  const blob=new Blob([nums.join("\n")]);
-  const a=document.createElement("a");
-
-  a.href=URL.createObjectURL(blob);
-  a.download="sms.txt";
-  a.click();
-}
-
-// ================= FILTER SAVE =================
-function saveFilters(){
-
-  let arr=[];
-
-  document.querySelectorAll('.condition-row').forEach(r=>{
-    arr.push({
-      c:r.querySelector('.col').value,
-      o:r.querySelector('.op').value,
-      v:r.querySelector('.val').value
-    });
-  });
-
-  localStorage.setItem("ops_filters",JSON.stringify(arr));
-}
-
-// ================= FILTER LOAD =================
-function loadFilters(){
-
-  let arr=JSON.parse(localStorage.getItem("ops_filters")||"[]");
-
-  conditions.innerHTML="";
-
-  arr.forEach(x=>{
-    addCondition();
-
-    let rows=document.querySelectorAll('.condition-row');
-    let last=rows[rows.length-1];
-
-    last.querySelector('.col').value=x.c;
-    last.querySelector('.op').value=x.o;
-    last.querySelector('.val').value=x.v;
-  });
+  preview.innerHTML = html;
 }
 
 </script>
