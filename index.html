@@ -1,232 +1,1852 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Отбор базы клиентов</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Campaign Engine — Compas</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-body{font-family:Arial;background:#2f2623;color:#fff;padding:16px;}
-.block{background:#3a2f2b;padding:12px;border-radius:12px;margin-bottom:12px;}
-button{background:#ef6f2e;border:none;padding:10px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;width:100%;}
-input,select{padding:6px;border-radius:8px;border:1px solid #444;background:#2f2623;color:#fff;width:100%;}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
-td,th{border:1px solid #444;padding:4px;}
-th{background:#ef6f2e;}
+  :root{
+    --bg:#2b221f;
+    --bg2:#332824;
+    --panel:#3a2f2b;
+    --panel2:#463733;
+    --line:rgba(255,255,255,.08);
+    --text:#fff;
+    --muted:rgba(255,255,255,.72);
+    --muted2:rgba(255,255,255,.52);
+    --accent:#ef6f2e;
+    --accent2:#d95c22;
+    --good:#72d39b;
+    --warn:#ffd27a;
+    --bad:#ff8d8d;
+    --shadow:0 16px 34px rgba(0,0,0,.28);
+    --radius:20px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:radial-gradient(circle at top, #3a2f2b 0, var(--bg) 42%, #231b18 100%); color:var(--text); font-family:"Nunito",system-ui,sans-serif; }
+  body{ padding:18px; }
+
+  .wrap{ max-width:1600px; margin:0 auto; }
+
+  .hero{
+    display:flex; justify-content:space-between; gap:16px; align-items:flex-start;
+    margin-bottom:16px;
+  }
+  .hero-left{ min-width:0; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 12px; border-radius:999px;
+    background:rgba(255,255,255,.05); border:1px solid var(--line);
+    color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.04em;
+    margin-bottom:12px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(239,111,46,.14); }
+  h1{ margin:0; font-size:30px; line-height:1.05; letter-spacing:-.02em; }
+  .sub{ margin:8px 0 0; color:var(--muted2); font-size:14px; font-weight:700; max-width:860px; }
+
+  .top-actions{
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+  }
+
+  .btn, .btn-secondary, .btn-ghost{
+    border:none; cursor:pointer; font-family:inherit; font-weight:800;
+    border-radius:999px; transition:.18s ease; user-select:none;
+  }
+  .btn{
+    color:#fff;
+    background:linear-gradient(180deg, var(--accent), var(--accent2));
+    box-shadow:0 12px 24px rgba(239,111,46,.22), inset 0 1px 0 rgba(255,255,255,.12);
+    padding:12px 18px;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 16px 28px rgba(239,111,46,.26), inset 0 1px 0 rgba(255,255,255,.12); }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-secondary{
+    color:#ffb98f;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(239,111,46,.32);
+    padding:12px 18px;
+  }
+  .btn-secondary:hover{ background:rgba(239,111,46,.12); color:#fff; transform:translateY(-1px); }
+
+  .btn-ghost{
+    color:var(--muted);
+    background:transparent;
+    border:1px solid var(--line);
+    padding:10px 14px;
+  }
+  .btn-ghost:hover{ background:rgba(255,255,255,.05); color:#fff; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.15fr .95fr;
+    gap:14px;
+  }
+  .stack{ display:grid; gap:14px; }
+
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), linear-gradient(180deg, var(--panel), var(--panel2));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+    padding:16px 18px 0;
+  }
+  .card-title{
+    display:flex; align-items:center; gap:10px; min-width:0;
+  }
+  .step{
+    width:30px; height:30px; border-radius:10px; flex:0 0 auto;
+    display:grid; place-items:center;
+    background:rgba(239,111,46,.14); color:#ffd7c2; border:1px solid rgba(239,111,46,.22);
+    font-weight:900; font-size:13px;
+  }
+  .card-title h2{
+    margin:0; font-size:18px; line-height:1.1;
+  }
+  .card-title p{
+    margin:4px 0 0; color:var(--muted2); font-size:13px; font-weight:700;
+  }
+  .card-body{ padding:14px 18px 18px; }
+
+  .field-row{
+    display:grid; gap:10px;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+  .field{
+    min-width:0;
+  }
+  .label{
+    display:block; margin:0 0 7px; font-size:12px; font-weight:800; color:var(--muted2); letter-spacing:.04em; text-transform:uppercase;
+  }
+  select, input[type="text"], input[type="number"], input[type="date"], input[type="file"]{
+    width:100%;
+    background:rgba(0,0,0,.15);
+    color:var(--text);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:14px;
+    padding:12px 13px;
+    outline:none;
+    font:inherit;
+    min-height:46px;
+    transition:.18s ease;
+  }
+  select:focus, input:focus{
+    border-color:rgba(239,111,46,.52);
+    box-shadow:0 0 0 4px rgba(239,111,46,.10);
+    transform:translateY(-1px);
+  }
+
+  .note{
+    margin-top:10px;
+    color:var(--muted2);
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .subgrid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+
+  .tiny-toggle{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px; border-radius:14px;
+    border:1px solid var(--line); background:rgba(255,255,255,.04);
+    color:#fff; font-weight:800; font-size:13px;
+  }
+  .tiny-toggle input{ width:18px; height:18px; }
+
+  .filters, .priority, .employee-list{
+    display:grid; gap:10px;
+  }
+
+  .rule{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    border-radius:18px;
+    padding:12px;
+  }
+  .rule-top{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom:10px;
+  }
+  .rule-name{
+    display:flex; align-items:center; gap:10px; min-width:0;
+    font-size:13px; font-weight:900; color:#fff;
+  }
+  .badge{
+    width:26px; height:26px; border-radius:9px;
+    display:grid; place-items:center;
+    background:rgba(239,111,46,.14); color:#ffd7c2; border:1px solid rgba(239,111,46,.22);
+    font-size:12px; flex:0 0 auto;
+  }
+  .rule-grid{
+    display:grid;
+    grid-template-columns: 1.45fr .95fr 1fr 1fr auto;
+    gap:10px;
+    align-items:end;
+  }
+  .rule-grid.priority-grid{
+    grid-template-columns: 1.5fr 1fr auto;
+  }
+  .operator-inputs{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+
+  .group-ops{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;
+  }
+
+  .segments-toolbar{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;
+  }
+
+  .seg-groups{
+    display:grid; gap:14px;
+  }
+  .seg-group{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    border-radius:18px;
+    padding:12px;
+  }
+  .seg-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:10px;
+  }
+  .seg-head h3{
+    margin:0; font-size:14px; font-weight:900;
+    display:flex; align-items:center; gap:8px;
+  }
+  .seg-count{
+    font-size:12px; color:var(--muted2); font-weight:800;
+  }
+  .seg-pills{
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .seg-pill{
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.12);
+    color:#fff;
+    border-radius:999px;
+    padding:9px 12px;
+    cursor:pointer;
+    display:inline-flex; align-items:center; gap:10px;
+    transition:.16s ease;
+    font-weight:800;
+  }
+  .seg-pill:hover{ transform:translateY(-1px); border-color:rgba(239,111,46,.35); }
+  .seg-pill.active{
+    background:linear-gradient(180deg, rgba(239,111,46,.95), rgba(217,92,34,.95));
+    border-color:rgba(255,255,255,.10);
+    box-shadow:0 10px 18px rgba(239,111,46,.18);
+  }
+  .seg-pill .count{
+    font-size:12px; opacity:.9; font-weight:900;
+    padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.14);
+  }
+  .seg-pill.active .count{
+    background:rgba(255,255,255,.18);
+  }
+  .seg-empty{
+    color:var(--muted2); font-size:13px; font-weight:700;
+  }
+
+  .employee-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap:12px;
+  }
+  .employee-card{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    border-radius:18px;
+    padding:12px;
+  }
+  .employee-top{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    margin-bottom:8px;
+  }
+  .employee-name{
+    font-weight:900; font-size:14px; line-height:1.2;
+  }
+  .employee-meta{
+    font-size:12px; color:var(--muted2); font-weight:800; margin-top:4px;
+  }
+  .employee-stats{
+    display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 0;
+  }
+  .chip{
+    font-size:12px; font-weight:800; color:#fff;
+    padding:6px 10px; border-radius:999px;
+    background:rgba(0,0,0,.16); border:1px solid rgba(255,255,255,.08);
+  }
+  .chip.good{ color:#cbffd9; border-color:rgba(114,211,155,.2); background:rgba(114,211,155,.08); }
+  .chip.warn{ color:#ffe5b3; border-color:rgba(255,210,122,.22); background:rgba(255,210,122,.08); }
+
+  .employee-inputs{
+    display:grid;
+    grid-template-columns: 1fr 120px;
+    gap:10px;
+    align-items:center;
+    margin-top:10px;
+  }
+  .employee-inputs input[type="number"]{ text-align:center; font-weight:900; }
+  .employee-footer{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px;
+    color:var(--muted2); font-size:12px; font-weight:800;
+  }
+  .employee-check{
+    display:flex; align-items:center; gap:8px; font-weight:800;
+  }
+
+  .summary-grid{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .summary-card{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    border-radius:18px;
+    padding:12px;
+  }
+  .summary-card .k{
+    font-size:12px; color:var(--muted2); font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .summary-card .v{
+    margin-top:6px; font-size:22px; font-weight:900; line-height:1.05;
+  }
+  .summary-card .s{
+    margin-top:6px; color:var(--muted2); font-size:12px; font-weight:700;
+  }
+
+  .summary-lines{
+    display:grid; gap:10px;
+  }
+  .summary-line{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    border-radius:16px;
+    padding:12px;
+    color:var(--text);
+    font-size:13px;
+  }
+  .summary-line b{ color:#fff; }
+
+  .preview-wrap{
+    overflow:auto;
+    border-radius:18px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.10);
+  }
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:12px;
+  }
+  thead th{
+    position:sticky; top:0;
+    background:linear-gradient(180deg, #ef6f2e, #d95c22);
+    color:#fff;
+    text-align:left;
+    padding:11px 10px;
+    font-size:11px;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    z-index:2;
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:9px 10px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    vertical-align:top;
+    white-space:nowrap;
+  }
+  tbody tr:nth-child(even) td{ background:rgba(255,255,255,.015); }
+
+  .status{
+    margin-top:10px;
+    color:var(--muted2);
+    font-size:13px;
+    font-weight:800;
+  }
+  .status.good{ color:var(--good); }
+  .status.warn{ color:var(--warn); }
+  .status.bad{ color:var(--bad); }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width: 1220px){
+    .grid{ grid-template-columns:1fr; }
+    .summary-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .employee-grid{ grid-template-columns:1fr; }
+  }
+  @media (max-width: 900px){
+    .field-row{ grid-template-columns:1fr; }
+    .rule-grid{ grid-template-columns:1fr; }
+    .rule-grid.priority-grid{ grid-template-columns:1fr; }
+    .operator-inputs{ grid-template-columns:1fr; }
+    .summary-grid{ grid-template-columns:1fr; }
+    .hero{ flex-direction:column; }
+    .top-actions{ justify-content:flex-start; }
+  }
 </style>
 </head>
-
 <body>
+<div class="wrap">
 
-<h2>📊 Отбор базы клиентов</h2>
+  <div class="hero">
+    <div class="hero-left">
+      <div class="eyebrow"><span class="dot"></span><span>COMPAS • CAMPAIGN ENGINE</span></div>
+      <h1>Операционный центр отбора клиентской базы</h1>
+      <p class="sub">
+        Сначала загружаем базу. Потом выбираем только те сегменты, которые реально есть в этом файле.
+        Далее задаём гибкие условия по любым столбцам, определяем приоритет отбора, смотрим по каждому сотруднику,
+        сколько найдено, вручную ставим лимиты и в конце выгружаем только номера для запуска коммуникаций.
+      </p>
+    </div>
 
-<div class="block">
-<input type="file" id="fileInput">
+    <div class="top-actions">
+      <button id="btnLoadDemo" class="btn-secondary" type="button">Пример логики</button>
+      <button id="btnAnalyze" class="btn" type="button" disabled>2. Посчитать отбор</button>
+      <button id="btnBuildFinal" class="btn" type="button" disabled>3. Собрать итог</button>
+      <button id="btnExport" class="btn" type="button" disabled>4. Выгрузить номера</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="stack">
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">1</div>
+            <div>
+              <h2>Загрузка базы и поля</h2>
+              <p>Файл загружается один раз, дальше система работает уже по этой базе.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field-row">
+            <div class="field">
+              <label class="label">Файл .xlsx / .csv</label>
+              <input id="fileInput" type="file" accept=".xlsx,.csv" />
+            </div>
+
+            <div class="field">
+              <label class="label">Поле сегмента</label>
+              <select id="segmentField"></select>
+            </div>
+
+            <div class="field">
+              <label class="label">Поле сотрудника</label>
+              <select id="employeeField"></select>
+            </div>
+          </div>
+
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field">
+              <label class="label">Поле телефона</label>
+              <select id="phoneField"></select>
+            </div>
+
+            <div class="field">
+              <label class="label">Статус загрузки</label>
+              <div class="tiny-toggle" style="min-height:46px;">
+                <span id="loadInfo">Файл не загружен</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label">Проверка формата</label>
+              <div class="tiny-toggle" style="min-height:46px;">
+                <span id="fieldInfo">Поля будут определены автоматически</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="note">
+            Дата в превью показывается как <b>DD.MM.YYYY</b>, суммы — с разделителями и знаком рубля.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">2</div>
+            <div>
+              <h2>Сегменты из этой выгрузки</h2>
+              <p>Показываются только значения сегментов, которые реально есть в файле.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="segments-toolbar">
+            <label class="tiny-toggle"><input id="useSegments" type="checkbox" checked /> Учитывать сегменты</label>
+            <button id="btnAllSegments" class="btn-ghost" type="button">Выбрать все</button>
+            <button id="btnClearSegments" class="btn-ghost" type="button">Снять все</button>
+          </div>
+          <div id="segmentsPanel" class="seg-groups">
+            <div class="seg-empty">Загрузите файл, затем здесь появятся сегменты.</div>
+          </div>
+          <div class="note">Сегменты сгруппированы красиво: блок клиента → статус. Остальные не показываются.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">3</div>
+            <div>
+              <h2>Гибкие условия отбора</h2>
+              <p>Любой столбец, понятный оператор, отдельные поля для дат и чисел.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="filtersPanel" class="filters"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button id="btnAddFilter" class="btn-secondary" type="button">+ Добавить условие</button>
+            <button id="btnClearFilters" class="btn-ghost" type="button">Очистить условия</button>
+          </div>
+          <div class="note">Примеры: дата последнего контакта до 31.01.2025, оборот больше 100000, сегмент содержит VIC.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">4</div>
+            <div>
+              <h2>Приоритет отбора внутри сотрудника</h2>
+              <p>Именно тут решается, какие записи попадут в первые 50, 80 или 100.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="priorityPanel" class="priority"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button id="btnAddPriority" class="btn-secondary" type="button">+ Добавить критерий</button>
+            <button id="btnDefaultPriority" class="btn-ghost" type="button">Заполнить по умолчанию</button>
+          </div>
+          <div class="note">
+            Порядок критериев важен: первый решает больше всего. Например: сначала старые контакты, потом больший оборот.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="stack">
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">5</div>
+            <div>
+              <h2>Сотрудники и квоты</h2>
+              <p>Сначала система показывает, сколько нашлось по каждому сотруднику. Потом ты задаёшь, сколько взять.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="employeePanel" class="employee-grid">
+            <div class="seg-empty">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>
+          </div>
+          <div class="note">Если нужно исключить сотрудника — поставь галочку. Если нужно уменьшить, просто измени лимит.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="step">6</div>
+            <div>
+              <h2>Summary и итог</h2>
+              <p>Видно, что отобралось, по каким правилам и сколько пойдёт в выгрузку.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="summaryPanel" class="summary-grid">
+            <div class="summary-card">
+              <div class="k">Загрузка</div>
+              <div class="v">—</div>
+              <div class="s">Ожидаем файл</div>
+            </div>
+            <div class="summary-card">
+              <div class="k">Подошло</div>
+              <div class="v">—</div>
+              <div class="s">После фильтров и сегментов</div>
+            </div>
+            <div class="summary-card">
+              <div class="k">Выгрузка</div>
+              <div class="v">—</div>
+              <div class="s">Финальные номера</div>
+            </div>
+            <div class="summary-card">
+              <div class="k">Сотрудники</div>
+              <div class="v">—</div>
+              <div class="s">По текущему пулу</div>
+            </div>
+          </div>
+
+          <div id="summaryLines" class="summary-lines"></div>
+          <div id="status" class="status">Загрузите базу, затем настройте отбор.</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:14px;">
+    <div class="card-head">
+      <div class="card-title">
+        <div class="step">7</div>
+        <div>
+          <h2>Предпросмотр результата</h2>
+          <p>Показывает 50 строк из текущего результата с нормальными датами, суммами и телефонами.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="preview-wrap" id="previewWrap">
+        <div style="padding:16px; color:var(--muted2); font-weight:700;">Пока нет результата.</div>
+      </div>
+    </div>
+  </section>
+
 </div>
-
-<div class="block">
-<h3>1. Сегменты</h3>
-<label><input type="checkbox" id="allSeg"> Все</label>
-<div id="segments"></div>
-</div>
-
-<div class="block">
-<h3>2. Фильтр</h3>
-<div id="filters"></div>
-<button onclick="addFilter()">+ добавить условие</button>
-</div>
-
-<div class="block">
-<h3>3. Приоритет отбора</h3>
-
-<label>Основной критерий</label>
-<select id="mainSort"></select>
-
-<select id="mainDir">
-<option value="desc">Сначала большие</option>
-<option value="asc">Сначала маленькие</option>
-</select>
-
-<label style="margin-top:10px;">Дополнительный критерий</label>
-<select id="secondSort"></select>
-
-<select id="secondDir">
-<option value="desc">Сначала большие</option>
-<option value="asc">Сначала маленькие</option>
-</select>
-
-</div>
-
-<div class="block">
-<h3>4. Квоты сотрудников</h3>
-<div id="staff"></div>
-</div>
-
-<button onclick="run()">🚀 Собрать базу для задач</button>
-
-<div id="summary" class="block"></div>
-<div id="preview"></div>
 
 <script>
+'use strict';
 
-let data=[],result=[];
-let SEG,EMP,PHONE,columns=[];
-
-// LOAD
-fileInput.onchange=async(e)=>{
-const f=e.target.files[0];
-const buf=await f.arrayBuffer();
-const wb=XLSX.read(buf,{type:'array'});
-data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
-columns=Object.keys(data[0]);
-
-SEG=columns.find(c=>c.toLowerCase().includes("сег"));
-EMP=columns.find(c=>c.toLowerCase().includes("сотруд"));
-PHONE=columns.find(c=>c.toLowerCase().includes("тел"));
-
-buildSegments();
-buildStaff();
-
-mainSort.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
-secondSort.innerHTML=mainSort.innerHTML;
+const state = {
+  rawData: [],
+  columns: [],
+  columnTypes: {},
+  fields: {
+    segment: '',
+    employee: '',
+    phone: ''
+  },
+  selectedSegments: new Set(),
+  segmentEnabled: true,
+  candidateRows: [],
+  finalRows: [],
+  employeeGroups: {},
+  employeeOrder: [],
+  loaded: false
 };
 
-// SEGMENTS
-function buildSegments(){
-let segs=[...new Set(data.map(r=>r[SEG]).filter(Boolean))];
-segments.innerHTML=segs.map(s=>`<label><input type="checkbox" value="${s}">${s}</label>`).join('');
+const el = {
+  fileInput: document.getElementById('fileInput'),
+  segmentField: document.getElementById('segmentField'),
+  employeeField: document.getElementById('employeeField'),
+  phoneField: document.getElementById('phoneField'),
+  loadInfo: document.getElementById('loadInfo'),
+  fieldInfo: document.getElementById('fieldInfo'),
+  segmentsPanel: document.getElementById('segmentsPanel'),
+  useSegments: document.getElementById('useSegments'),
+  btnAllSegments: document.getElementById('btnAllSegments'),
+  btnClearSegments: document.getElementById('btnClearSegments'),
+  filtersPanel: document.getElementById('filtersPanel'),
+  btnAddFilter: document.getElementById('btnAddFilter'),
+  btnClearFilters: document.getElementById('btnClearFilters'),
+  priorityPanel: document.getElementById('priorityPanel'),
+  btnAddPriority: document.getElementById('btnAddPriority'),
+  btnDefaultPriority: document.getElementById('btnDefaultPriority'),
+  employeePanel: document.getElementById('employeePanel'),
+  summaryPanel: document.getElementById('summaryPanel'),
+  summaryLines: document.getElementById('summaryLines'),
+  status: document.getElementById('status'),
+  previewWrap: document.getElementById('previewWrap'),
+  btnAnalyze: document.getElementById('btnAnalyze'),
+  btnBuildFinal: document.getElementById('btnBuildFinal'),
+  btnExport: document.getElementById('btnExport'),
+  btnLoadDemo: document.getElementById('btnLoadDemo')
+};
+
+function escapeHtml(value){
+  return String(value ?? '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#039;');
 }
 
-// FILTER
-function addFilter(){
-filters.innerHTML+=`
-<div>
-<select class="f_col">${columns.map(c=>`<option>${c}</option>`).join('')}</select>
-<select class="f_op">
-<option value="contains">содержит</option>
-<option value="eq">=</option>
-<option value="gte">≥</option>
-<option value="lte">≤</option>
-</select>
-<input class="f_val">
-</div>`;
+function setStatus(text, type=''){
+  el.status.textContent = text;
+  el.status.className = `status ${type}`.trim();
 }
 
-// STAFF
-function buildStaff(){
-let map={};
-data.forEach(r=>{
-let s=r[EMP]||"—";
-map[s]=(map[s]||0)+1;
-});
-staff.innerHTML=Object.entries(map).map(([k,v])=>`
-<div>${k} (${v}) <input type="number" value="50" data-s="${k}"></div>
-`).join('');
+function normalizeText(v){
+  return String(v ?? '').trim();
 }
 
-// MATCH
-function match(r){
-
-if(!allSeg.checked){
-let sel=[...document.querySelectorAll('#segments input:checked')].map(i=>i.value);
-if(sel.length && !sel.includes(r[SEG])) return false;
+function detectFieldByName(columns, patterns){
+  const lower = columns.map(c => [c, c.toLowerCase()]);
+  for(const p of patterns){
+    const found = lower.find(([orig, low]) => low.includes(p));
+    if(found) return found[0];
+  }
+  return columns[0] || '';
 }
 
-for(let f of document.querySelectorAll('#filters > div')){
-let col=f.querySelector('.f_col').value;
-let op=f.querySelector('.f_op').value;
-let val=f.querySelector('.f_val').value;
-let v=r[col];
-
-if(op==="contains" && !String(v).toLowerCase().includes(val.toLowerCase())) return false;
-if(op==="eq" && v!=val) return false;
-if(op==="gte" && +v<+val) return false;
-if(op==="lte" && +v>+val) return false;
+function isEmptyValue(v){
+  return v === null || v === undefined || String(v).trim() === '';
 }
 
-return true;
+function parseNumberSmart(v){
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  const s = String(v).replace(/\s+/g,'').replace(',', '.').trim();
+  if (/^-?\d+(\.\d+)?$/.test(s)) {
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
 
-// RUN
-function run(){
-
-let filtered=data.filter(match);
-
-// SORT
-let mCol=mainSort.value;
-let mDir=mainDir.value;
-let sCol=secondSort.value;
-let sDir=secondDir.value;
-
-filtered.sort((a,b)=>{
-
-let v1=+a[mCol]||0;
-let v2=+b[mCol]||0;
-
-if(v1!==v2) return mDir==="desc"?v2-v1:v1-v2;
-
-let s1=+a[sCol]||0;
-let s2=+b[sCol]||0;
-
-return sDir==="desc"?s2-s1:s1-s2;
-});
-
-// QUOTA
-let quotas={};
-document.querySelectorAll('#staff input').forEach(i=>{
-quotas[i.dataset.s]=+i.value;
-});
-
-let counters={};
-Object.keys(quotas).forEach(s=>counters[s]=0);
-
-result=[];
-
-for(let r of filtered){
-for(let s in quotas){
-if(counters[s]<quotas[s]){
-result.push({...r,[EMP]:s});
-counters[s]++;
-break;
-}
-}
+function excelSerialToDate(serial){
+  if (!Number.isFinite(serial)) return null;
+  const ms = Math.round((serial - 25569) * 86400 * 1000);
+  const d = new Date(ms);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// SUMMARY
-summary.innerHTML=`
-<b>Всего:</b> ${result.length}<br>
-${Object.entries(counters).map(([k,v])=>`${k}: ${v}`).join("<br>")}
-`;
+function parseDateSmart(v){
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
 
-// PREVIEW
-render(result);
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    if (v > 20000 && v < 80000) {
+      const d = excelSerialToDate(v);
+      if (d) return d;
+    }
+    const d = new Date(v);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  const s = String(v).trim();
+
+  let m = s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/);
+  if (m) {
+    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})$/);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// RENDER
-function render(rows){
-
-if(!rows.length){
-preview.innerHTML="Нет данных";
-return;
+function formatDateDDMMYYYY(v){
+  const d = parseDateSmart(v);
+  if (!d) return String(v ?? '');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = d.getFullYear();
+  return `${dd}.${mm}.${yy}`;
 }
 
-let keys=Object.keys(rows[0]);
-
-let html="<table><tr>"+keys.map(k=>`<th>${k}</th>`).join("")+"</tr>";
-
-rows.slice(0,50).forEach(r=>{
-html+="<tr>"+keys.map(k=>`<td>${r[k]||""}</td>`).join("")+"</tr>";
-});
-
-html+="</table>";
-
-preview.innerHTML=html;
+function formatNumberRu(v){
+  const n = parseNumberSmart(v);
+  if (n === null) return String(v ?? '');
+  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n);
 }
+
+function formatMoneyRu(v){
+  const n = parseNumberSmart(v);
+  if (n === null) return String(v ?? '');
+  return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n)} ₽`;
+}
+
+function normalizePhone(v){
+  let digits = String(v ?? '').replace(/\D/g,'');
+  if (digits.length === 11 && digits.startsWith('8')) digits = '7' + digits.slice(1);
+  return digits;
+}
+
+function formatPhone(v){
+  const digits = normalizePhone(v);
+  if (digits.length === 11 && digits.startsWith('7')) {
+    return `+7 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7,9)}-${digits.slice(9,11)}`;
+  }
+  if (digits.length === 10) {
+    return `${digits.slice(0,3)} ${digits.slice(3,6)}-${digits.slice(6,8)}-${digits.slice(8,10)}`;
+  }
+  return digits || String(v ?? '');
+}
+
+function isMoneyColumn(col){
+  return /оборот|сумм|выруч|amount|money|стоим|price|revenue/i.test(col);
+}
+function isDateColumn(col){
+  return /дата|date|контакт|last.*contact|послед/i.test(col);
+}
+function isPhoneColumn(col){
+  return /тел|phone|mobile|моб/i.test(col);
+}
+function isEmployeeColumn(col){
+  return /сотрудник|manager|менеджер|employee/i.test(col);
+}
+function isSegmentColumn(col){
+  return /сегмент|segment/i.test(col);
+}
+
+function inferColumnType(col, rows){
+  const samples = rows.slice(0, 200).map(r => r[col]).filter(v => !isEmptyValue(v)).slice(0, 80);
+  if (!samples.length) return isDateColumn(col) ? 'date' : (isMoneyColumn(col) ? 'number' : 'text');
+
+  let score = { date: 0, number: 0, text: 0 };
+
+  for (const v of samples) {
+    if (isDateColumn(col) || parseDateSmart(v)) score.date++;
+    else if (isMoneyColumn(col) || parseNumberSmart(v) !== null) score.number++;
+    else score.text++;
+  }
+
+  if (score.date >= score.number && score.date >= score.text) return 'date';
+  if (score.number >= score.date && score.number >= score.text) return 'number';
+  return 'text';
+}
+
+function rebuildColumnTypes(){
+  state.columnTypes = {};
+  for (const col of state.columns) {
+    state.columnTypes[col] = inferColumnType(col, state.rawData);
+  }
+}
+
+function populateFieldSelect(select, selected){
+  select.innerHTML = state.columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (selected && state.columns.includes(selected)) select.value = selected;
+}
+
+function renderFieldSelectors(){
+  populateFieldSelect(el.segmentField, state.fields.segment || detectFieldByName(state.columns, ['сегмент']));
+  populateFieldSelect(el.employeeField, state.fields.employee || detectFieldByName(state.columns, ['сотрудник', 'менеджер', 'employee']));
+  populateFieldSelect(el.phoneField, state.fields.phone || detectFieldByName(state.columns, ['тел', 'phone', 'mobile']));
+
+  el.fieldInfo.textContent = state.columns.length ? `Найдено столбцов: ${state.columns.length}` : 'Поля будут определены автоматически';
+}
+
+function getOperatorOptions(type){
+  if (type === 'date') {
+    return [
+      ['eq', 'Равно'],
+      ['neq', 'Не равно'],
+      ['gt', 'После'],
+      ['gte', 'После или в дату'],
+      ['lt', 'До'],
+      ['lte', 'До или в дату'],
+      ['between', 'Между'],
+      ['empty', 'Пусто'],
+      ['not_empty', 'Не пусто']
+    ];
+  }
+  if (type === 'number') {
+    return [
+      ['eq', 'Равно'],
+      ['neq', 'Не равно'],
+      ['gt', 'Больше'],
+      ['gte', 'Больше или равно'],
+      ['lt', 'Меньше'],
+      ['lte', 'Меньше или равно'],
+      ['between', 'Между'],
+      ['empty', 'Пусто'],
+      ['not_empty', 'Не пусто']
+    ];
+  }
+  return [
+    ['contains', 'Содержит'],
+    ['not_contains', 'Не содержит'],
+    ['eq', 'Равно'],
+    ['neq', 'Не равно'],
+    ['starts_with', 'Начинается с'],
+    ['ends_with', 'Заканчивается на'],
+    ['empty', 'Пусто'],
+    ['not_empty', 'Не пусто']
+  ];
+}
+
+function getDirectionOptions(type){
+  if (type === 'date') {
+    return [
+      ['desc', 'Сначала новые'],
+      ['asc', 'Сначала старые']
+    ];
+  }
+  if (type === 'number') {
+    return [
+      ['desc', 'Сначала больше'],
+      ['asc', 'Сначала меньше']
+    ];
+  }
+  return [
+    ['asc', 'А → Я'],
+    ['desc', 'Я → А']
+  ];
+}
+
+function getFieldType(col){
+  return state.columnTypes[col] || 'text';
+}
+
+function addFilterRow(prefill = {}){
+  const idx = el.filtersPanel.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'rule filter-rule';
+
+  row.innerHTML = `
+    <div class="rule-top">
+      <div class="rule-name"><span class="badge">${idx}</span><span>Условие отбора</span></div>
+      <button class="btn-ghost" type="button" data-remove="1">Удалить</button>
+    </div>
+    <div class="rule-grid">
+      <div class="field">
+        <label class="label">Поле</label>
+        <select class="filter-field"></select>
+      </div>
+      <div class="field">
+        <label class="label">Оператор</label>
+        <select class="filter-op"></select>
+      </div>
+      <div class="field">
+        <label class="label">Значение</label>
+        <input class="filter-value1" type="text" />
+      </div>
+      <div class="field filter-value2-wrap hidden">
+        <label class="label">До</label>
+        <input class="filter-value2" type="text" />
+      </div>
+      <div class="field">
+        <label class="label">&nbsp;</label>
+        <div class="tiny-toggle"><span class="filter-type-label">тип</span></div>
+      </div>
+    </div>
+  `;
+  el.filtersPanel.appendChild(row);
+
+  const field = row.querySelector('.filter-field');
+  const op = row.querySelector('.filter-op');
+  const v1 = row.querySelector('.filter-value1');
+  const v2 = row.querySelector('.filter-value2');
+  const typeLabel = row.querySelector('.filter-type-label');
+  const removeBtn = row.querySelector('[data-remove="1"]');
+
+  populateFieldSelect(field, prefill.field || state.columns[0]);
+  const initialField = field.value;
+  const initialType = getFieldType(initialField);
+
+  function syncFilterRow(){
+    const selectedField = field.value;
+    const type = getFieldType(selectedField);
+    typeLabel.textContent = type === 'date' ? 'дата' : type === 'number' ? 'число' : 'текст';
+
+    const currentOp = op.value;
+    op.innerHTML = getOperatorOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
+
+    if ([...op.options].some(o => o.value === currentOp)) op.value = currentOp;
+    else op.value = (prefill.op && [...op.options].some(o => o.value === prefill.op)) ? prefill.op : op.options[0].value;
+
+    if (type === 'date') {
+      v1.type = 'date';
+      v2.type = 'date';
+      v1.placeholder = '01.02.2025';
+      v2.placeholder = '31.12.2025';
+    } else if (type === 'number') {
+      v1.type = 'text';
+      v2.type = 'text';
+      v1.placeholder = '100000';
+      v2.placeholder = '200000';
+    } else {
+      v1.type = 'text';
+      v2.type = 'text';
+      v1.placeholder = 'Текст';
+      v2.placeholder = 'Текст';
+    }
+
+    v2.classList.toggle('hidden', op.value !== 'between');
+  }
+
+  field.addEventListener('change', syncFilterRow);
+  op.addEventListener('change', syncFilterRow);
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    renumberRules(el.filtersPanel, '.filter-rule');
+  });
+
+  syncFilterRow();
+  if (prefill.value1 !== undefined) v1.value = prefill.value1;
+  if (prefill.value2 !== undefined) v2.value = prefill.value2;
+}
+
+function addPriorityRow(prefill = {}){
+  const idx = el.priorityPanel.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'rule priority-rule';
+
+  row.innerHTML = `
+    <div class="rule-top">
+      <div class="rule-name"><span class="badge">${idx}</span><span>Критерий отбора</span></div>
+      <button class="btn-ghost" type="button" data-remove="1">Удалить</button>
+    </div>
+    <div class="rule-grid priority-grid">
+      <div class="field">
+        <label class="label">Поле</label>
+        <select class="priority-field"></select>
+      </div>
+      <div class="field">
+        <label class="label">Порядок</label>
+        <select class="priority-dir"></select>
+      </div>
+      <div class="field">
+        <label class="label">&nbsp;</label>
+        <div class="tiny-toggle"><span class="priority-type-label">тип</span></div>
+      </div>
+    </div>
+  `;
+  el.priorityPanel.appendChild(row);
+
+  const field = row.querySelector('.priority-field');
+  const dir = row.querySelector('.priority-dir');
+  const typeLabel = row.querySelector('.priority-type-label');
+  const removeBtn = row.querySelector('[data-remove="1"]');
+
+  populateFieldSelect(field, prefill.field || state.columns[0]);
+
+  function syncPriorityRow(){
+    const type = getFieldType(field.value);
+    typeLabel.textContent = type === 'date' ? 'дата' : type === 'number' ? 'число' : 'текст';
+
+    const currentDir = dir.value || prefill.dir || '';
+    dir.innerHTML = getDirectionOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
+    if ([...dir.options].some(o => o.value === currentDir)) dir.value = currentDir;
+  }
+
+  field.addEventListener('change', syncPriorityRow);
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    renumberRules(el.priorityPanel, '.priority-rule');
+  });
+
+  syncPriorityRow();
+  if (prefill.dir && [...dir.options].some(o => o.value === prefill.dir)) dir.value = prefill.dir;
+}
+
+function renumberRules(container, selector){
+  [...container.querySelectorAll(selector)].forEach((row, i) => {
+    const badge = row.querySelector('.badge');
+    if (badge) badge.textContent = String(i + 1).padStart(2,'0');
+  });
+}
+
+function clearFilterRows(){
+  el.filtersPanel.innerHTML = '';
+}
+
+function clearPriorityRows(){
+  el.priorityPanel.innerHTML = '';
+}
+
+function setDefaultPriorityRows(){
+  clearPriorityRows();
+
+  const candidates = [];
+  const dateField = detectFieldByName(state.columns, ['дата', 'контакт']);
+  const turnoverField = detectFieldByName(state.columns, ['оборот', 'сумм', 'выруч']);
+  const lastContactField = state.columns.find(c => /дата.*контакт|послед.*контакт/i.test(c)) || dateField;
+
+  if (lastContactField) {
+    candidates.push({
+      field: lastContactField,
+      dir: 'asc'
+    });
+  }
+  if (turnoverField && turnoverField !== lastContactField) {
+    candidates.push({
+      field: turnoverField,
+      dir: 'desc'
+    });
+  }
+  if (!candidates.length && state.columns[0]) {
+    candidates.push({ field: state.columns[0], dir: 'asc' });
+  }
+
+  candidates.forEach(c => addPriorityRow(c));
+}
+
+function buildSegmentsPanel(){
+  const segField = state.fields.segment;
+  if (!segField || !state.columns.includes(segField)) {
+    el.segmentsPanel.innerHTML = `<div class="seg-empty">Выберите поле сегмента в шаге 1.</div>`;
+    return;
+  }
+
+  const values = new Map();
+  for (const row of state.rawData) {
+    const raw = normalizeText(row[segField]);
+    const value = raw === '' ? 'Без анкеты' : raw;
+    values.set(value, (values.get(value) || 0) + 1);
+  }
+
+  const entries = [...values.entries()];
+  entries.sort((a,b) => {
+    const ga = segmentGroupName(a[0]);
+    const gb = segmentGroupName(b[0]);
+    if (ga !== gb) return ga.localeCompare(gb, 'ru');
+    return a[0].localeCompare(b[0], 'ru');
+  });
+
+  const groupMap = new Map();
+  for (const [value, count] of entries) {
+    const group = segmentGroupName(value);
+    if (!groupMap.has(group)) groupMap.set(group, []);
+    groupMap.get(group).push({ value, count });
+  }
+
+  state.selectedSegments = new Set(entries.map(([v]) => v));
+
+  const html = [...groupMap.entries()].map(([group, items]) => {
+    const groupTotal = items.reduce((sum, item) => sum + item.count, 0);
+    const pills = items.map(({ value, count }) => `
+      <button type="button" class="seg-pill active" data-seg="${escapeHtml(value)}">
+        <span>${escapeHtml(segmentDisplayName(value))}</span>
+        <span class="count">${count}</span>
+      </button>
+    `).join('');
+
+    return `
+      <div class="seg-group">
+        <div class="seg-head">
+          <h3>${escapeHtml(group)}</h3>
+          <div class="seg-count">${groupTotal} записей</div>
+        </div>
+        <div class="seg-pills">${pills}</div>
+      </div>
+    `;
+  }).join('');
+
+  el.segmentsPanel.innerHTML = html || `<div class="seg-empty">В выбранном поле сегмента нет значений.</div>`;
+
+  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const seg = btn.dataset.seg;
+      if (btn.classList.contains('active')) state.selectedSegments.add(seg);
+      else state.selectedSegments.delete(seg);
+    });
+  });
+
+  setStatus(`Сегменты построены: ${state.selectedSegments.size} значений`, 'good');
+}
+
+function segmentGroupName(value){
+  const v = String(value ?? '').trim();
+  if (!v) return 'Пусто';
+  if (v === 'none') return 'none';
+  if (v === 'Без анкеты') return 'Без анкеты';
+  if (!v.includes('_')) return 'Прочее';
+
+  const [left] = v.split('_');
+  return left || 'Прочее';
+}
+
+function segmentDisplayName(value){
+  const v = String(value ?? '').trim();
+  if (!v) return 'Пусто';
+  if (v === 'none') return 'none';
+  if (v === 'Без анкеты') return 'Без анкеты';
+  if (!v.includes('_')) return v;
+  return v.split('_').slice(1).join('_') || v;
+}
+
+function toggleSegments(active){
+  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
+    btn.classList.toggle('active', active);
+    const seg = btn.dataset.seg;
+    if (active) state.selectedSegments.add(seg);
+    else state.selectedSegments.delete(seg);
+  });
+}
+
+function readFiltersFromUI(){
+  const rows = [...el.filtersPanel.querySelectorAll('.filter-rule')];
+  return rows.map(row => ({
+    field: row.querySelector('.filter-field').value,
+    operator: row.querySelector('.filter-op').value,
+    value1: row.querySelector('.filter-value1').value,
+    value2: row.querySelector('.filter-value2').value,
+    type: getFieldType(row.querySelector('.filter-field').value)
+  })).filter(f => f.field);
+}
+
+function readPriorityFromUI(){
+  const rows = [...el.priorityPanel.querySelectorAll('.priority-rule')];
+  return rows.map(row => ({
+    field: row.querySelector('.priority-field').value,
+    dir: row.querySelector('.priority-dir').value || 'desc',
+    type: getFieldType(row.querySelector('.priority-field').value)
+  })).filter(r => r.field);
+}
+
+function matchesFilter(row, f){
+  const raw = row[f.field];
+  const type = f.type;
+
+  if (f.operator === 'empty') return isEmptyValue(raw);
+  if (f.operator === 'not_empty') return !isEmptyValue(raw);
+
+  if (type === 'date') {
+    const rowDate = parseDateSmart(raw);
+    const v1 = parseDateSmart(f.value1);
+    const v2 = parseDateSmart(f.value2);
+
+    if (!rowDate) return false;
+    if (!v1 && !['empty','not_empty'].includes(f.operator)) return false;
+
+    const t = rowDate.getTime();
+    const a = v1 ? v1.getTime() : null;
+    const b = v2 ? v2.getTime() : null;
+
+    if (f.operator === 'eq') return a !== null && t === a;
+    if (f.operator === 'neq') return a !== null && t !== a;
+    if (f.operator === 'gt') return a !== null && t > a;
+    if (f.operator === 'gte') return a !== null && t >= a;
+    if (f.operator === 'lt') return a !== null && t < a;
+    if (f.operator === 'lte') return a !== null && t <= a;
+    if (f.operator === 'between') return a !== null && b !== null && t >= Math.min(a,b) && t <= Math.max(a,b);
+    return true;
+  }
+
+  if (type === 'number') {
+    const num = parseNumberSmart(raw);
+    const a = parseNumberSmart(f.value1);
+    const b = parseNumberSmart(f.value2);
+    if (num === null) return false;
+
+    if (f.operator === 'eq') return a !== null && num === a;
+    if (f.operator === 'neq') return a !== null && num !== a;
+    if (f.operator === 'gt') return a !== null && num > a;
+    if (f.operator === 'gte') return a !== null && num >= a;
+    if (f.operator === 'lt') return a !== null && num < a;
+    if (f.operator === 'lte') return a !== null && num <= a;
+    if (f.operator === 'between') return a !== null && b !== null && num >= Math.min(a,b) && num <= Math.max(a,b);
+    return true;
+  }
+
+  const text = String(raw ?? '').toLowerCase().trim();
+  const v1 = String(f.value1 ?? '').toLowerCase().trim();
+  const v2 = String(f.value2 ?? '').toLowerCase().trim();
+
+  if (f.operator === 'contains') return text.includes(v1);
+  if (f.operator === 'not_contains') return !text.includes(v1);
+  if (f.operator === 'eq') return text === v1;
+  if (f.operator === 'neq') return text !== v1;
+  if (f.operator === 'starts_with') return text.startsWith(v1);
+  if (f.operator === 'ends_with') return text.endsWith(v1);
+  if (f.operator === 'between') {
+    const s = text.localeCompare(v1, 'ru');
+    const e = text.localeCompare(v2, 'ru');
+    return s >= 0 && e <= 0;
+  }
+  return true;
+}
+
+function compareRowsByPriority(a, b, rules){
+  for (const r of rules) {
+    const type = r.type;
+    const va = a[r.field];
+    const vb = b[r.field];
+
+    let cmp = 0;
+
+    if (type === 'date') {
+      const da = parseDateSmart(va);
+      const db = parseDateSmart(vb);
+      const ta = da ? da.getTime() : -Infinity;
+      const tb = db ? db.getTime() : -Infinity;
+      cmp = ta < tb ? -1 : ta > tb ? 1 : 0;
+    } else if (type === 'number') {
+      const na = parseNumberSmart(va);
+      const nb = parseNumberSmart(vb);
+      const ta = na === null ? -Infinity : na;
+      const tb = nb === null ? -Infinity : nb;
+      cmp = ta < tb ? -1 : ta > tb ? 1 : 0;
+    } else {
+      cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'ru', { sensitivity:'base' });
+    }
+
+    if (cmp !== 0) {
+      return r.dir === 'asc' ? cmp : -cmp;
+    }
+  }
+  return (a.__idx || 0) - (b.__idx || 0);
+}
+
+function buildWhy(row, rules){
+  if (!rules.length) return 'Без доп. приоритетов';
+  return rules.map((r, i) => {
+    const val = row[r.field];
+    const nice = formatForDisplay(val, r.field);
+    const dirText = directionText(r.type, r.dir);
+    return `${i+1}) ${r.field}: ${nice} (${dirText})`;
+  }).join(' • ');
+}
+
+function directionText(type, dir){
+  if (type === 'date') return dir === 'asc' ? 'сначала старые' : 'сначала новые';
+  if (type === 'number') return dir === 'asc' ? 'сначала меньше' : 'сначала больше';
+  return dir === 'asc' ? 'А → Я' : 'Я → А';
+}
+
+function formatForDisplay(v, col){
+  if (v === null || v === undefined || v === '') return '';
+  if (isPhoneColumn(col)) return formatPhone(v);
+  if (isDateColumn(col) || getFieldType(col) === 'date') return formatDateDDMMYYYY(v);
+  if (isMoneyColumn(col)) return formatMoneyRu(v);
+  if (getFieldType(col) === 'number') return formatNumberRu(v);
+  return String(v);
+}
+
+function renderSummary(stage){
+  const loaded = state.rawData.length;
+  const candidate = state.candidateRows.length;
+  const final = state.finalRows.length;
+  const employees = state.employeeOrder.length;
+
+  el.summaryPanel.innerHTML = `
+    <div class="summary-card">
+      <div class="k">Загрузка</div>
+      <div class="v">${loaded ? new Intl.NumberFormat('ru-RU').format(loaded) : '—'}</div>
+      <div class="s">строк в базе</div>
+    </div>
+    <div class="summary-card">
+      <div class="k">Подошло</div>
+      <div class="v">${candidate ? new Intl.NumberFormat('ru-RU').format(candidate) : '—'}</div>
+      <div class="s">после сегментов и условий</div>
+    </div>
+    <div class="summary-card">
+      <div class="k">Выгрузка</div>
+      <div class="v">${final ? new Intl.NumberFormat('ru-RU').format(final) : '—'}</div>
+      <div class="s">финальных номеров</div>
+    </div>
+    <div class="summary-card">
+      <div class="k">Сотрудники</div>
+      <div class="v">${employees ? employees : '—'}</div>
+      <div class="s">по текущему пулу</div>
+    </div>
+  `;
+
+  const segSummary = getSelectedSegmentsText();
+  const filterSummary = getFilterSummaryText();
+  const prioritySummary = getPrioritySummaryText();
+  const empSummary = getEmployeeSummaryText(stage);
+
+  el.summaryLines.innerHTML = `
+    <div class="summary-line"><b>Сегменты:</b> ${segSummary}</div>
+    <div class="summary-line"><b>Условия:</b> ${filterSummary}</div>
+    <div class="summary-line"><b>Приоритет:</b> ${prioritySummary}</div>
+    <div class="summary-line"><b>По сотрудникам:</b><br>${empSummary}</div>
+  `;
+}
+
+function getSelectedSegmentsText(){
+  if (!state.segmentEnabled) return 'не учитывать сегменты';
+  if (!state.selectedSegments.size) return 'ничего не выбрано';
+  const arr = [...state.selectedSegments];
+  const shown = arr.slice(0, 8).map(escapeHtml).join(', ');
+  return arr.length > 8 ? `${shown} … и ещё ${arr.length - 8}` : shown;
+}
+
+function getFilterSummaryText(){
+  const filters = readFiltersFromUI();
+  if (!filters.length) return 'без дополнительных условий';
+
+  return filters.map(f => {
+    const valueText = f.operator === 'between'
+      ? `${formatForDisplay(f.value1, f.field)} — ${formatForDisplay(f.value2, f.field)}`
+      : formatForDisplay(f.value1, f.field);
+
+    const opText = {
+      contains: 'содержит',
+      not_contains: 'не содержит',
+      eq: 'равно',
+      neq: 'не равно',
+      starts_with: 'начинается с',
+      ends_with: 'заканчивается на',
+      gt: '>',
+      gte: '≥',
+      lt: '<',
+      lte: '≤',
+      between: 'между',
+      empty: 'пусто',
+      not_empty: 'не пусто'
+    }[f.operator] || f.operator;
+
+    return `${escapeHtml(f.field)} ${opText} ${escapeHtml(valueText)}`;
+  }).join(' • ');
+}
+
+function getPrioritySummaryText(){
+  const rules = readPriorityFromUI();
+  if (!rules.length) return 'без дополнительных критериев';
+  return rules.map((r, i) => `${i+1}) ${escapeHtml(r.field)} — ${escapeHtml(directionText(r.type, r.dir))}`).join(' • ');
+}
+
+function getEmployeeSummaryText(stage){
+  if (!state.employeeOrder.length) return 'сначала посчитайте отбор';
+
+  if (stage === 'final' && state.finalRows.length) {
+    const countByEmp = groupCount(state.finalRows, state.fields.employee);
+    return state.employeeOrder.map(name => {
+      const selected = countByEmp.get(name) || 0;
+      const card = [...document.querySelectorAll('.employee-card')].find(x => x.dataset.employee === name);
+      const quota = card ? Number(card.querySelector('.quota-input').value || 0) : 0;
+      return `${escapeHtml(name)} — ${selected} из ${quota}`;
+    }).join('<br>');
+  }
+
+  const countByEmp = groupCount(state.candidateRows, state.fields.employee);
+  return state.employeeOrder.map(name => {
+    const found = countByEmp.get(name) || 0;
+    return `${escapeHtml(name)} — найдено ${found}`;
+  }).join('<br>');
+}
+
+function groupCount(rows, col){
+  const map = new Map();
+  for (const r of rows) {
+    const key = normalizeText(r[col]) || 'Без сотрудника';
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return map;
+}
+
+function buildEmployeePanel(){
+  const employeeField = state.fields.employee;
+  if (!employeeField || !state.columns.includes(employeeField)) {
+    el.employeePanel.innerHTML = `<div class="seg-empty">Выберите поле сотрудника в шаге 1.</div>`;
+    return;
+  }
+
+  const groups = new Map();
+  for (const row of state.candidateRows) {
+    const name = normalizeText(row[employeeField]) || 'Без сотрудника';
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(row);
+  }
+
+  const order = [...groups.entries()]
+    .map(([name, rows]) => ({ name, rows, count: rows.length }))
+    .sort((a,b) => a.name.localeCompare(b.name, 'ru'));
+
+  state.employeeGroups = Object.fromEntries(order.map(x => [x.name, x.rows]));
+  state.employeeOrder = order.map(x => x.name);
+
+  if (!order.length) {
+    el.employeePanel.innerHTML = `<div class="seg-empty">После расчёта здесь появятся сотрудники и найденные по ним записи.</div>`;
+    return;
+  }
+
+  el.employeePanel.innerHTML = order.map(({ name, count }) => `
+    <div class="employee-card" data-employee="${escapeHtml(name)}" data-found="${count}">
+      <div class="employee-top">
+        <div>
+          <div class="employee-name">${escapeHtml(name)}</div>
+          <div class="employee-meta">Найдено: ${new Intl.NumberFormat('ru-RU').format(count)} записей</div>
+        </div>
+        <label class="employee-check"><input class="exclude-check" type="checkbox"> Исключить</label>
+      </div>
+      <div class="employee-inputs">
+        <div>
+          <label class="label" style="margin-bottom:6px;">Сколько взять</label>
+          <input class="quota-input" type="number" min="0" max="${count}" value="${count}" />
+        </div>
+        <div>
+          <label class="label" style="margin-bottom:6px;">Лимит</label>
+          <div class="tiny-toggle" style="min-height:46px; justify-content:center;">
+            <span class="quota-preview">${count}</span>
+          </div>
+        </div>
+      </div>
+      <div class="employee-footer">
+        <span>Можно уменьшить вручную или выключить сотрудника.</span>
+        <span class="take-preview">К выдаче: ${count}</span>
+      </div>
+    </div>
+  `).join('');
+
+  el.employeePanel.querySelectorAll('.employee-card').forEach(card => {
+    const found = Number(card.dataset.found || 0);
+    const quotaInput = card.querySelector('.quota-input');
+    const exclude = card.querySelector('.exclude-check');
+    const quotaPreview = card.querySelector('.quota-preview');
+    const takePreview = card.querySelector('.take-preview');
+
+    const sync = () => {
+      if (exclude.checked) {
+        quotaInput.value = 0;
+        quotaInput.disabled = true;
+      } else {
+        quotaInput.disabled = false;
+        let q = Math.max(0, Number(quotaInput.value || 0));
+        if (q > found) q = found;
+        quotaInput.value = q;
+      }
+      const q = Number(quotaInput.value || 0);
+      quotaPreview.textContent = String(q);
+      takePreview.textContent = `К выдаче: ${exclude.checked ? 0 : q}`;
+    };
+
+    quotaInput.addEventListener('input', sync);
+    exclude.addEventListener('change', sync);
+    sync();
+  });
+}
+
+function readEmployeePlan(){
+  const cards = [...document.querySelectorAll('.employee-card')];
+  return cards.map(card => {
+    const employee = card.dataset.employee;
+    const found = Number(card.dataset.found || 0);
+    const quotaInput = card.querySelector('.quota-input');
+    const exclude = card.querySelector('.exclude-check');
+
+    let quota = exclude.checked ? 0 : Number(quotaInput.value || 0);
+    if (!Number.isFinite(quota) || quota < 0) quota = 0;
+    if (quota > found) quota = found;
+
+    return { employee, found, quota, exclude: exclude.checked };
+  });
+}
+
+function analyze(){
+  if (!state.loaded) return;
+
+  state.segmentEnabled = el.useSegments.checked;
+  state.fields.segment = el.segmentField.value;
+  state.fields.employee = el.employeeField.value;
+  state.fields.phone = el.phoneField.value;
+
+  const filters = readFiltersFromUI();
+  const segmentSet = state.segmentEnabled ? new Set([...state.selectedSegments]) : null;
+
+  const candidates = [];
+  const rows = state.rawData;
+
+  for (const row of rows) {
+    if (state.segmentEnabled) {
+      const seg = normalizeText(row[state.fields.segment]) || 'Без анкеты';
+      if (segmentSet && segmentSet.size && !segmentSet.has(seg)) continue;
+    }
+
+    let ok = true;
+    for (const f of filters) {
+      if (!matchesFilter(row, f)) {
+        ok = false;
+        break;
+      }
+    }
+    if (!ok) continue;
+
+    candidates.push(row);
+  }
+
+  state.candidateRows = candidates;
+  state.finalRows = [];
+
+  buildEmployeePanel();
+  renderSummary('analysis');
+  renderPreview(candidates, 'candidate');
+
+  el.btnBuildFinal.disabled = false;
+  el.btnExport.disabled = true;
+
+  setStatus(`Отбор посчитан. Подошло ${new Intl.NumberFormat('ru-RU').format(candidates.length)} строк. Теперь можно задать лимиты по сотрудникам.`, 'good');
+}
+
+function buildFinal(){
+  if (!state.candidateRows.length) {
+    setStatus('Сначала посчитай отбор.', 'warn');
+    return;
+  }
+
+  const rules = readPriorityFromUI();
+  const plan = readEmployeePlan();
+  const employeeField = state.fields.employee;
+
+  const groups = new Map();
+  for (const row of state.candidateRows) {
+    const name = normalizeText(row[employeeField]) || 'Без сотрудника';
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(row);
+  }
+
+  const final = [];
+  const selectedByEmp = new Map();
+
+  for (const item of plan) {
+    if (item.exclude || item.quota <= 0) {
+      selectedByEmp.set(item.employee, 0);
+      continue;
+    }
+
+    const group = groups.get(item.employee) || [];
+    const sorted = [...group].sort((a,b) => compareRowsByPriority(a,b,rules));
+    const picked = sorted.slice(0, item.quota).map(r => {
+      const copy = { ...r };
+      copy.__why = buildWhy(copy, rules);
+      return copy;
+    });
+
+    final.push(...picked);
+    selectedByEmp.set(item.employee, picked.length);
+  }
+
+  state.finalRows = final;
+
+  renderSummary('final');
+  renderPreview(final, 'final');
+
+  el.btnExport.disabled = final.length === 0;
+  setStatus(`Итог собран. В выгрузке ${new Intl.NumberFormat('ru-RU').format(final.length)} номеров.`, 'good');
+}
+
+function renderPreview(rows, mode){
+  if (!rows || !rows.length) {
+    el.previewWrap.innerHTML = `<div style="padding:16px; color:var(--muted2); font-weight:700;">Пока нет результата.</div>`;
+    return;
+  }
+
+  const baseColumns = state.columns.filter(c => !String(c).startsWith('__'));
+  const columns = mode === 'final' ? [...baseColumns, 'Причина отбора'] : baseColumns;
+
+  let html = `<table><thead><tr>${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
+
+  const previewRows = rows.slice(0, 50);
+  for (const row of previewRows) {
+    html += '<tr>';
+    for (const col of baseColumns) {
+      html += `<td>${escapeHtml(formatForDisplay(row[col], col))}</td>`;
+    }
+    if (mode === 'final') {
+      html += `<td>${escapeHtml(row.__why || '')}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  el.previewWrap.innerHTML = html;
+}
+
+function exportPhones(){
+  if (!state.finalRows.length) {
+    setStatus('Сначала собери итог.', 'warn');
+    return;
+  }
+
+  const phoneField = state.fields.phone;
+  if (!phoneField || !state.columns.includes(phoneField)) {
+    setStatus('Поле телефона не выбрано.', 'bad');
+    return;
+  }
+
+  const phones = state.finalRows
+    .map(r => normalizePhone(r[phoneField]))
+    .filter(v => v.length >= 10);
+
+  const unique = [...new Set(phones)];
+
+  if (!unique.length) {
+    setStatus('Нет номеров для выгрузки.', 'bad');
+    return;
+  }
+
+  const blob = new Blob([unique.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'compas_phones.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  setStatus(`TXT готов. ${new Intl.NumberFormat('ru-RU').format(unique.length)} уникальных номеров.`, 'good');
+}
+
+function applyDefaultsAfterLoad(){
+  clearFilterRows();
+  addFilterRow();
+  setDefaultPriorityRows();
+  el.btnAnalyze.disabled = false;
+  el.btnBuildFinal.disabled = true;
+  el.btnExport.disabled = true;
+  setStatus('Файл загружен. Выберите сегменты, условия и приоритеты, затем нажмите «Посчитать отбор».', 'good');
+}
+
+function loadFile(file){
+  const reader = new FileReader();
+
+  reader.onload = (evt) => {
+    try {
+      let workbook;
+      const isCsv = /\.csv$/i.test(file.name);
+
+      if (isCsv) {
+        const text = evt.target.result;
+        workbook = XLSX.read(text, { type: 'string' });
+      } else {
+        const buffer = evt.target.result;
+        workbook = XLSX.read(buffer, { type: 'array' });
+      }
+
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      rows = rows.map((r, idx) => ({ __idx: idx + 1, ...r }));
+
+      state.rawData = rows;
+      state.columns = Object.keys(rows[0] || {}).filter(c => c !== '__idx');
+      rebuildColumnTypes();
+
+      state.fields.segment = detectFieldByName(state.columns, ['сегмент']);
+      state.fields.employee = detectFieldByName(state.columns, ['сотрудник', 'менеджер', 'employee']);
+      state.fields.phone = detectFieldByName(state.columns, ['тел', 'phone', 'mobile']);
+
+      renderFieldSelectors();
+      buildSegmentsPanel();
+      applyDefaultsAfterLoad();
+
+      el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
+      state.loaded = true;
+    } catch (err) {
+      console.error(err);
+      setStatus(`Ошибка загрузки: ${err.message}`, 'bad');
+    }
+  };
+
+  if (/\.csv$/i.test(file.name)) reader.readAsText(file, 'utf-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function wireUp(){
+  el.fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    loadFile(file);
+  });
+
+  el.segmentField.addEventListener('change', () => {
+    state.fields.segment = el.segmentField.value;
+    buildSegmentsPanel();
+  });
+
+  el.employeeField.addEventListener('change', () => {
+    state.fields.employee = el.employeeField.value;
+  });
+
+  el.phoneField.addEventListener('change', () => {
+    state.fields.phone = el.phoneField.value;
+  });
+
+  el.useSegments.addEventListener('change', () => {
+    state.segmentEnabled = el.useSegments.checked;
+  });
+
+  el.btnAllSegments.addEventListener('click', () => {
+    toggleSegments(true);
+  });
+
+  el.btnClearSegments.addEventListener('click', () => {
+    toggleSegments(false);
+  });
+
+  el.btnAddFilter.addEventListener('click', () => {
+    addFilterRow();
+  });
+
+  el.btnClearFilters.addEventListener('click', () => {
+    clearFilterRows();
+    addFilterRow();
+  });
+
+  el.btnAddPriority.addEventListener('click', () => {
+    addPriorityRow();
+  });
+
+  el.btnDefaultPriority.addEventListener('click', () => {
+    setDefaultPriorityRows();
+  });
+
+  el.btnAnalyze.addEventListener('click', () => {
+    analyze();
+  });
+
+  el.btnBuildFinal.addEventListener('click', () => {
+    buildFinal();
+  });
+
+  el.btnExport.addEventListener('click', () => {
+    exportPhones();
+  });
+
+  el.btnLoadDemo.addEventListener('click', () => {
+    const text = [
+      'Сначала загрузка базы',
+      'Потом сегменты только из этой базы',
+      'Потом гибкие условия по любому столбцу',
+      'Потом приоритет отбора внутри сотрудника',
+      'Потом квоты и исключения',
+      'Потом выгрузка телефонов'
+    ].join(' • ');
+    setStatus(text, 'good');
+  });
+}
+
+function buildInitialUI(){
+  clearFilterRows();
+  addFilterRow();
+  setDefaultPriorityRows();
+}
+
+function clearAllState(){
+  state.candidateRows = [];
+  state.finalRows = [];
+  state.employeeGroups = {};
+  state.employeeOrder = [];
+  el.employeePanel.innerHTML = `<div class="seg-empty">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>`;
+  renderSummary('analysis');
+  renderPreview([], 'candidate');
+}
+
+wireUp();
+buildInitialUI();
+renderSummary('analysis');
 
 </script>
-
 </body>
 </html>
