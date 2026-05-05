@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Фильтр базы клиентов — BORK</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ========================= DESIGN TOKENS (BORK Style) ========================= */
+    :root {
+      --bg: transparent;
+      --panel: #4b403d; --panel-2: #433936; --panel-3: #372f2d;
+      --text: #ffffff; --muted: rgba(255,255,255,0.68); --muted-2: rgba(255,255,255,0.54); --muted-3: rgba(255,255,255,0.40);
+      --border: rgba(255,255,255,0.11); --border-soft: rgba(255,255,255,0.08);
+      --accent: #ef6f2e; --accent-2: #dd6226; --accent-soft: rgba(239,111,46,0.16);
+      --r-card: 20px; --r-row: 15px; --r-pill: 999px; --gap: 16px;
+      --shadow-card: 0 14px 28px rgba(0,0,0,0.30), 0 3px 10px rgba(0,0,0,0.18);
+      --shadow-accent: 0 12px 26px rgba(239,111,46,0.22);
+      --inset-top: inset 0 1px 0 rgba(255,255,255,0.06); --tr: 180ms ease;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Nunito", system-ui, sans-serif; }
+    body { padding: 18px 16px 24px; }
+    .wrapper { max-width: 1200px; margin: 0 auto; }
+
+    /* Topbar */
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: var(--r-pill); border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--muted-2); font-size: 12px; font-weight: 800; }
+    .eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(239,111,46,0.10); }
+    .title { margin: 0; font-size: 24px; font-weight: 800; color: #fff; }
+    .subtitle { margin: 4px 0 0; color: var(--muted-2); font-size: 13px; font-weight: 700; }
+
+    /* Form Shell */
+    .form-shell { position: relative; overflow: hidden; border-radius: var(--r-card); border: 1px solid var(--border); background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0)), linear-gradient(180deg, var(--panel), var(--panel-2)); box-shadow: var(--shadow-card), var(--inset-top); padding: 18px; }
+    .form-shell::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 70px; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0)); pointer-events: none; }
+    .form-content { position: relative; z-index: 1; }
+    .section { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); }
+    .section-title { margin: 0; font-size: 18px; font-weight: 800; color: #fff; }
+    .section-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: var(--r-pill); border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--muted-2); font-size: 12px; font-weight: 800; }
+    .section-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(239,111,46,0.10); }
+
+    /* Grids & Fields */
+    .grid-3, .grid-2, .grid-4 { display: grid; gap: 14px; }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field-label { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted-3); }
+    .control, .control-select { width: 100%; min-height: 46px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)), rgba(0,0,0,0.10); color: var(--text); outline: none; font-family: inherit; font-size: 14px; transition: border-color var(--tr), box-shadow var(--tr); }
+    .control:focus, .control-select:focus { border-color: rgba(239,111,46,0.55); box-shadow: 0 0 0 4px rgba(239,111,46,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)), rgba(0,0,0,0.14); transform: translateY(-1px); }
+
+    /* Conditions */
+    .condition-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 12px; }
+    .condition-row select, .condition-row input { flex: 1; }
+    .btn-remove { background: #ef4444; padding: 10px; flex: 0 0 auto; min-width: 40px; border-radius: 10px; border: none; color: #fff; cursor: pointer; font-weight: 700; }
+    .btn-remove:hover { opacity: 0.9; }
+
+    /* Table Preview */
+    #preview { max-height: 400px; overflow: auto; border-radius: 12px; border: 1px solid var(--border); margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; }
+    th { background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #fff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0; }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+    /* Buttons & Status */
+    .btn, .btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; border-radius: var(--r-pill); font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform var(--tr), box-shadow var(--tr); border: none; }
+    .btn { color: #fff; background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.14), rgba(255,255,255,0) 38%), linear-gradient(180deg, var(--accent), var(--accent-2)); box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 16px 30px rgba(239,111,46,0.28); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-secondary { border: 1px solid rgba(239,111,46,0.48); color: var(--accent); background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)), rgba(0,0,0,0.08); }
+    .btn-secondary:hover { transform: translateY(-1px); background: rgba(239,111,46,0.10); color: #fff; }
+    .status { margin-top: 10px; font-size: 12px; font-weight: 700; color: var(--muted-2); }
+    .status.loading { color: #93c5fd; }
+    .status.success { color: #86efac; }
+    .status.error { color: #fca5a5; }
+
+    /* Responsive */
+    @media (max-width: 980px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { body { padding: 14px 12px 18px; } .topbar { flex-direction: column; align-items: flex-start; } .title { font-size: 22px; } .btn, .btn-secondary { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="topbar">
+      <div class="eyebrow"><span class="eyebrow-dot"></span><span>DATA TOOL</span></div>
+      <div style="text-align:right">
+        <h1 class="title">Фильтр клиентской базы</h1>
+        <p class="subtitle">Локальная обработка • Файл не покидает ваш ПК</p>
+      </div>
+    </div>
+
+    <div class="form-shell">
+      <div class="form-content">
+        <!-- Загрузка -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">1. Загрузка файла</h2>
+            <div class="section-chip"><span class="section-chip-dot"></span><span>.xlsx / .csv</span></div>
+          </div>
+          <input type="file" id="fileInput" class="control" accept=".xlsx,.csv" />
+          <div id="status" class="status"></div>
+        </section>
+
+        <!-- Условия -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">2. Условия отбора</h2>
+            <div class="section-chip"><span class="section-chip-dot"></span><span>Гибкие фильтры</span></div>
+          </div>
+          <div id="conditions"></div>
+          <button id="addCondition" class="btn-secondary" style="width:auto; margin-top:10px;">+ Добавить условие</button>
+        </section>
+
+        <!-- Группировка -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">3. Группировка и лимиты</h2>
+            <div class="section-chip"><span class="section-chip-dot"></span><span>ТОП-N на сотрудника</span></div>
+          </div>
+          <div class="grid-4">
+            <div class="field" style="grid-column: span 4; display:flex; align-items:center; gap:10px;">
+              <input type="checkbox" id="enableGrouping" style="width:auto; min-width:auto;">
+              <label for="enableGrouping" style="font-weight:700;">Ограничить клиентов на каждого сотрудника</label>
+            </div>
+            <div class="field"><label class="field-label">Сортировать по</label><select id="sortCol" class="control-select"></select></div>
+            <div class="field"><label class="field-label">Клиентов на сотрудника</label><input type="number" id="nLimit" class="control" value="100" min="1" max="5000"></div>
+            <div class="field"><label class="field-label">Порядок</label><select id="orderType" class="control-select"><option value="top">Самый высокий оборот</option><option value="bottom">Самый низкий оборот</option></select></div>
+          </div>
+        </section>
+
+        <button id="applyBtn" class="btn" style="width:100%; padding:14px; font-size:16px;">🔍 Применить фильтры</button>
+
+        <!-- Результат -->
+        <div id="resultSection" style="display:none; margin-top:20px;">
+          <section class="section">
+            <div class="section-head">
+              <h2 class="section-title">✅ Результат</h2>
+              <div id="resultStats" class="section-chip" style="background:rgba(239,111,46,0.15); border-color:rgba(239,111,46,0.3); color:#ffd0b3;"></div>
+            </div>
+            <div id="preview"></div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h2 class="section-title">💾 Экспорт в .txt</h2>
+              <div class="section-chip"><span class="section-chip-dot"></span><span>Список номеров</span></div>
+            </div>
+            <div class="grid-2">
+              <div class="field"><label class="field-label">Экспортировать столбец</label><select id="exportCol" class="control-select"></select></div>
+              <div class="field" style="display:flex; align-items:flex-end;"><button id="downloadBtn" class="btn" style="width:100%;">📥 Скачать список</button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  // DuckDB-WASM import (работает только через http/https, не file://)
+  import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/duckdb-browser-async.mjs';
+
+  let db = null, conn = null, csvUrl = null;
+  let columns = [], filteredResult = null;
+
+  const statusEl = document.getElementById('status');
+  const setStatus = (msg, type) => { statusEl.textContent = msg; statusEl.className = `status ${type}`; };
+  
+  // Инициализация условий
+  function addCondition() {
+    const row = document.createElement('div'); row.className = 'condition-row';
+    row.innerHTML = `
+      <select class="col-select control-select"><option value="">Столбец</option></select>
+      <select class="op-select control-select">
+        <option value="==">=</option><option value="!=">≠</option><option value=">">></option><option value="<"><</option>
+        <option value=">=">≥</option><option value="<=">≤</option><option value="contains">Содержит</option>
+        <option value="between">Между (дата/число)</option>
+      </select>
+      <input type="text" class="val-input control" placeholder="Значение">
+      <input type="text" class="val-input-2 control" placeholder="До (для between)" style="display:none; width:120px;">
+      <button class="btn-remove">✕</button>`;
+    document.getElementById('conditions').appendChild(row);
+    row.querySelector('.btn-remove').onclick = () => row.remove();
+    row.querySelector('.op-select').onchange = (e) => {
+      row.querySelector('.val-input-2').style.display = e.target.value === 'between' ? 'block' : 'none';
+    };
+    updateConditionDropdowns();
+  }
+  function updateConditionDropdowns() {
+    document.querySelectorAll('.col-select').forEach(sel => {
+      const val = sel.value;
+      sel.innerHTML = '<option value="">Столбец</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join('');
+      sel.value = val;
+    });
+  }
+  document.getElementById('addCondition').onclick = addCondition;
+  addCondition();
+
+  // 1. Инициализация DuckDB
+  (async () => {
+    try {
+      setStatus('Загрузка движка DuckDB...', 'loading');
+      const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+      const worker = new Worker(bundle.mainWorker);
+      db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
+      await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+      conn = await db.connect();
+      setStatus('✅ Движок готов. Загрузите файл.', 'success');
+    } catch (e) { console.error(e); setStatus('❌ Ошибка DuckDB. Проверьте консоль.', 'error'); }
+  })();
+
+  // 2. Загрузка файла
+  document.getElementById('fileInput').onchange = async (e) => {
+    const file = e.target.files[0]; if (!file || !conn) return;
+    setStatus('Конвертация файла...', 'loading');
+    document.getElementById('applyBtn').disabled = true;
+    try {
+      const data = await file.arrayBuffer();
+      let csvStr;
+      if (file.name.match(/\.(xlsx|xls)$/)) {
+        const wb = XLSX.read(data, { type: 'array' });
+        csvStr = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { header: true });
+      } else { csvStr = new TextDecoder().decode(data); }
+      if (csvUrl) URL.revokeObjectURL(csvUrl);
+      csvUrl = URL.createObjectURL(new Blob([csvStr], { type: 'text/csv' }));
+      await conn.query(`CREATE OR REPLACE TABLE data AS SELECT * FROM read_csv_auto('${csvUrl}', auto_detect=true, sample_size=-1)`);
+      const meta = await conn.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'data'");
+      columns = meta.toArray().map(r => r.column_name);
+      // Заполнение селектов
+      ['sortCol', 'exportCol'].forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = columns.map(c => `<option value="${c}">${c}</option>`).join('');
+      });
+      // Авто-выбор разумных значений
+      const sumCol = columns.find(c => c.toLowerCase().includes('сумм') || c.toLowerCase().includes('оборот'));
+      if (sumCol) document.getElementById('sortCol').value = sumCol;
+      const phoneCol = columns.find(c => c.toLowerCase().match(/телефон|моб|контакт/));
+      if (phoneCol) document.getElementById('exportCol').value = phoneCol;
+      updateConditionDropdowns();
+      setStatus(`✅ Загружено: ${columns.length} столбцов. Готово к фильтрации.`, 'success');
+      document.getElementById('applyBtn').disabled = false;
+    } catch (err) { setStatus(`❌ Ошибка: ${err.message}`, 'error'); document.getElementById('applyBtn').disabled = false; }
+  };
+
+  // 3. Применение фильтров
+  document.getElementById('applyBtn').onclick = async () => {
+    if (!csvUrl) return setStatus('Сначала загрузите файл', 'error');
+    setStatus('Выполняю запрос...', 'loading');
+    document.getElementById('applyBtn').disabled = true;
+    try {
+      const conds = [];
+      document.querySelectorAll('.condition-row').forEach(r => {
+        const c = r.querySelector('.col-select').value; const o = r.querySelector('.op-select').value;
+        const v1 = r.querySelector('.val-input').value.trim(); const v2 = r.querySelector('.val-input-2').value.trim();
+        if (!c || !v1) return;
+        if (o === 'contains') conds.push(`"${c}" ILIKE '%${v1.replace(/'/g,"''")}%'`);
+        else if (o === 'between') conds.push(`CAST("${c}" AS DOUBLE) BETWEEN CAST('${v1.replace(',','.')}' AS DOUBLE) AND CAST('${v2.replace(',','.')}' AS DOUBLE)`);
+        else if (['>','<','>=','<='].includes(o)) conds.push(`CAST("${c}" AS DOUBLE) ${o} CAST('${v1.replace(',','.')}' AS DOUBLE)`);
+        else conds.push(`CAST("${c}" AS VARCHAR) ${o} '${v1.replace(/'/g,"''")}'`);
+      });
+      const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+      const enableGrp = document.getElementById('enableGrouping').checked;
+      const sortCol = document.getElementById('sortCol').value; const nLim = parseInt(document.getElementById('nLimit').value) || 100;
+      const isTop = document.getElementById('orderType').value === 'top';
+      let query;
+      if (enableGrp) {
+        query = `WITH Ranked AS (SELECT *, ROW_NUMBER() OVER(PARTITION BY "Сотрудник" ORDER BY CAST("${sortCol}" AS DOUBLE) ${isTop?'DESC':'ASC'} NULLS LAST) as rn FROM data ${where}) SELECT * FROM Ranked WHERE rn <= ${nLim}`;
+      } else { query = `SELECT * FROM data ${where}`; }
+      filteredResult = await conn.query(query);
+      const rows = filteredResult.toArray();
+      document.getElementById('resultSection').style.display = 'block';
+      document.getElementById('resultStats').textContent = `Найдено: ${rows.length.toLocaleString()} записей`;
+      // Превью
+      const preview = document.getElementById('preview');
+      if (!rows.length) { preview.innerHTML = '<p style="padding:20px; color:var(--muted)">Нет данных по условиям</p>'; return; }
+      const headers = Object.keys(rows[0]);
+      let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+      rows.slice(0,50).forEach(r => html += '<tr>' + headers.map(h=>`<td>${r[h]??''}</td>`).join('') + '</tr>');
+      html += '</tbody></table>';
+      if (rows.length > 50) html += `<p style="padding:8px; color:var(--muted)">Показано 50 из ${rows.length.toLocaleString()}</p>`;
+      preview.innerHTML = html;
+      setStatus('✅ Готово.', 'success');
+    } catch (err) { setStatus(`❌ Ошибка: ${err.message}`, 'error'); console.error(err); }
+    finally { document.getElementById('applyBtn').disabled = false; }
+  };
+
+  // 4. Экспорт
+  document.getElementById('downloadBtn').onclick = () => {
+    if (!filteredResult) return;
+    const col = document.getElementById('exportCol').value;
+    const arrowCol = filteredResult.getChild(col); if (!arrowCol) return alert('Столбец не найден');
+    const values = arrowCol.toArray().map(v => v==null?'':String(v)).filter(v=>v.trim()!=='');
+    const blob = new Blob([values.join('\n')], {type:'text/plain'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `export_${col.replace(/\s+/g,'_')}.txt`; a.click();
+    URL.revokeObjectURL(a.href);
+  };
+</script>
+</body>
+</html>
