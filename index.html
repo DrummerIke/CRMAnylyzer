@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Compas Операционный Центр</title>
+<title>Compas Operation Center</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -34,15 +34,21 @@ button{
   border-radius:10px;
   cursor:pointer;
   font-weight:700;
-  margin:4px 0;
+  margin-top:6px;
 }
 
-input{
+input,select{
+  background:#3a2f2b;
+  border:1px solid #444;
+  color:#fff;
   padding:6px;
   border-radius:8px;
-  border:1px solid #444;
-  background:#3a2f2b;
-  color:#fff;
+}
+
+label{
+  font-size:12px;
+  display:block;
+  margin:2px 0;
 }
 
 .checkbox-grid{
@@ -66,36 +72,49 @@ td,th{
 
 th{
   background:#ef6f2e;
+  position:sticky;
+  top:0;
 }
 </style>
 </head>
 
 <body>
 
-<h2>⚙️ COMPAS ОПЕРАЦИОННЫЙ ЦЕНТР</h2>
+<h2>⚙️ COMPAS OPERATION CENTER</h2>
 
 <div class="panel">
 <input type="file" id="fileInput">
 </div>
 
-<!-- СЕГМЕНТЫ -->
+<!-- SEGMENTS -->
 <div class="panel">
 <h3>📊 Сегменты</h3>
-<div id="segments" class="checkbox-grid"></div>
-<button onclick="applySegments()">Применить сегменты</button>
+<div id="segments"></div>
+<button onclick="applyFilters()">Применить фильтр</button>
 </div>
 
-<!-- РАСПРЕДЕЛЕНИЕ -->
+<!-- FILTERS -->
 <div class="panel">
-<h3>👥 Сотрудники</h3>
+<h3>🔎 Условия</h3>
+
+<label>Дата последнего контакта (до)</label>
+<input type="date" id="dateLimit">
+
+<label>Минимальный оборот</label>
+<input type="number" id="turnoverMin" value="0">
+</div>
+
+<!-- STAFF -->
+<div class="panel">
+<h3>👥 Распределение</h3>
 <div id="staff"></div>
 <button onclick="distribute()">⚡ Распределить задачи</button>
 </div>
 
-<!-- ВЫГРУЗКА -->
+<!-- EXPORT -->
 <div class="panel">
-<h3>📲 Compas выгрузка</h3>
-<button onclick="exportPhones()">Скачать телефоны (.txt)</button>
+<h3>📲 Compas экспорт</h3>
+<button onclick="exportPhones()">Скачать TXT</button>
 </div>
 
 <div id="preview"></div>
@@ -106,40 +125,20 @@ let data = [];
 let filtered = [];
 
 let PHONE_FIELD = null;
-let EMPLOYEE_FIELD = null;
-let SEGMENT_FIELD = null;
+let EMP_FIELD = null;
+let SEG_FIELD = null;
 
-// ================= СЕГМЕНТЫ =================
+// ================= SEGMENTS =================
 const SEGMENTS = [
-"none",
-"Без анкеты",
-"Искра_Корпоративные",
-"Искра_Ушедшие",
-"Искра_Спящие",
-"Искра_Активные",
-"Новички_Корпоративные",
-"Новички_Ушедшие",
-"Новички_Спящие",
-"Новички_Активные",
-"Знакомые_Корпоративные",
-"Знакомые_Ушедшие",
-"Знакомые_Спящие",
-"Знакомые_Активные",
-"Друзья_Корпоративные",
-"Друзья_Ушедшие",
-"Друзья_Спящие",
-"Друзья_Активные",
-"Семья_Корпоративные",
-"Семья_Ушедшие",
-"Семья_Спящие",
-"Семья_Активные",
-"VIC_Корпоративные",
-"VIC_Ушедшие",
-"VIC_Спящие",
-"VIC_Активные"
+"Искра_Активные","Искра_Спящие","Искра_Ушедшие","Искра_Корпоративные",
+"Новички_Активные","Новички_Спящие","Новички_Ушедшие","Новички_Корпоративные",
+"Знакомые_Активные","Знакомые_Спящие","Знакомые_Ушедшие","Знакомые_Корпоративные",
+"Друзья_Активные","Друзья_Спящие","Друзья_Ушедшие","Друзья_Корпоративные",
+"Семья_Активные","Семья_Спящие","Семья_Ушедшие","Семья_Корпоративные",
+"VIC_Активные","VIC_Спящие","VIC_Ушедшие","VIC_Корпоративные"
 ];
 
-// ================= ЗАГРУЗКА =================
+// ================= LOAD =================
 fileInput.onchange = async (e)=>{
 
   const file = e.target.files[0];
@@ -152,18 +151,9 @@ fileInput.onchange = async (e)=>{
 
   const keys = Object.keys(data[0] || {});
 
-  PHONE_FIELD = keys.find(k =>
-    k.toLowerCase().includes("тел") ||
-    k.toLowerCase().includes("phone")
-  );
-
-  EMPLOYEE_FIELD = keys.find(k =>
-    k.toLowerCase().includes("сотрудник")
-  );
-
-  SEGMENT_FIELD = keys.find(k =>
-    k.toLowerCase().includes("сегмент")
-  );
+  PHONE_FIELD = keys.find(k => k.toLowerCase().includes("тел"));
+  EMP_FIELD = keys.find(k => k.toLowerCase().includes("сотрудник"));
+  SEG_FIELD = keys.find(k => k.toLowerCase().includes("сегмент"));
 
   buildSegments();
   buildStaff();
@@ -171,9 +161,8 @@ fileInput.onchange = async (e)=>{
   render(data);
 };
 
-// ================= СЕГМЕНТЫ UI =================
+// ================= SEGMENTS UI =================
 function buildSegments(){
-
   segments.innerHTML = SEGMENTS.map(s=>`
     <label>
       <input type="checkbox" value="${s}">
@@ -182,49 +171,61 @@ function buildSegments(){
   `).join('');
 }
 
-// ================= СОТРУДНИКИ =================
+// ================= STAFF =================
 function buildStaff(){
 
-  if(!EMPLOYEE_FIELD) return;
+  if(!EMP_FIELD) return;
 
   let map = {};
 
   data.forEach(r=>{
-    let s = r[EMPLOYEE_FIELD] || "—";
+    let s = r[EMP_FIELD] || "—";
     map[s] = (map[s] || 0) + 1;
   });
 
   staff.innerHTML = Object.entries(map).map(([k,v])=>`
-    <div>
+    <label>
       ${k} (${v})
       <input type="number" value="${v}" data-s="${k}">
-    </div>
+    </label>
   `).join('');
 }
 
-// ================= СЕГМЕНТЫ =================
-function applySegments(){
+// ================= FILTER =================
+function applyFilters(){
 
   const selected = [...document.querySelectorAll('#segments input:checked')]
     .map(i=>i.value);
 
-  if(selected.length === 0 || selected.includes("none")){
-    filtered = [...data];
-    render(filtered);
-    return;
-  }
+  const dateLimit = document.getElementById("dateLimit").value;
+  const turnoverMin = +document.getElementById("turnoverMin").value || 0;
 
-  filtered = data.filter(r =>
-    selected.includes(r[SEGMENT_FIELD])
-  );
+  filtered = data.filter(r=>{
+
+    // SEGMENT
+    if(selected.length && !selected.includes(r[SEG_FIELD])){
+      return false;
+    }
+
+    // DATE FILTER
+    if(dateLimit && r["Дата последнего контакта"]){
+      const d = new Date(r["Дата последнего контакта"].split(".").reverse().join("-"));
+      if(d > new Date(dateLimit)) return false;
+    }
+
+    // TURNOVER
+    if(r["Оборот"] && +r["Оборот"] < turnoverMin){
+      return false;
+    }
+
+    return true;
+  });
 
   render(filtered);
 }
 
-// ================= РАСПРЕДЕЛЕНИЕ =================
+// ================= DISTRIBUTE =================
 function distribute(){
-
-  if(!EMPLOYEE_FIELD) return;
 
   const inputs = document.querySelectorAll('#staff input');
 
@@ -238,9 +239,16 @@ function distribute(){
 
   const staff = Object.keys(limits);
 
+  // приоритет: старые контакты первыми
+  const sorted = [...filtered].sort((a,b)=>{
+    const da = new Date((a["Дата последнего контакта"]||"01.01.2000").split(".").reverse().join("-"));
+    const db = new Date((b["Дата последнего контакта"]||"01.01.2000").split(".").reverse().join("-"));
+    return da - db;
+  });
+
   let i = 0;
 
-  filtered.forEach(r=>{
+  for(let r of sorted){
 
     let tries = 0;
 
@@ -249,10 +257,8 @@ function distribute(){
       let s = staff[i];
 
       if(counters[s] < limits[s]){
-
-        r[EMPLOYEE_FIELD] = s;
+        r[EMP_FIELD] = s;
         counters[s]++;
-
         i = (i+1) % staff.length;
         break;
       }
@@ -260,19 +266,14 @@ function distribute(){
       i = (i+1) % staff.length;
       tries++;
     }
+  }
 
-  });
-
+  filtered = sorted;
   render(filtered);
 }
 
-// ================= ВЫГРУЗКА =================
+// ================= EXPORT =================
 function exportPhones(){
-
-  if(!PHONE_FIELD){
-    alert("Поле телефона не найдено");
-    return;
-  }
 
   const phones = filtered
     .map(r => String(r[PHONE_FIELD] || "").replace(/\D/g,''))
@@ -280,7 +281,7 @@ function exportPhones(){
 
   const unique = [...new Set(phones)];
 
-  if(unique.length === 0){
+  if(!unique.length){
     alert("Нет номеров для выгрузки");
     return;
   }
@@ -303,14 +304,10 @@ function render(rows){
 
   const keys = Object.keys(rows[0]);
 
-  let html = "<table><tr>" +
-    keys.map(k=>`<th>${k}</th>`).join("") +
-    "</tr>";
+  let html = "<table><tr>" + keys.map(k=>`<th>${k}</th>`).join("") + "</tr>";
 
   rows.slice(0,100).forEach(r=>{
-    html += "<tr>" +
-      keys.map(k=>`<td>${r[k] ?? ""}</td>`).join("") +
-      "</tr>";
+    html += "<tr>" + keys.map(k=>`<td>${r[k] ?? ""}</td>`).join("") + "</tr>";
   });
 
   html += "</table>";
