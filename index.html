@@ -3,316 +3,227 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Compas Operation Center</title>
+<title>Отбор базы клиентов</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#2f2623;
-  color:#fff;
-  padding:16px;
-}
-
-h2{margin:10px 0;}
-
-.panel{
-  background:rgba(255,255,255,0.04);
-  padding:12px;
-  border-radius:12px;
-  margin-bottom:12px;
-}
-
-button{
-  background:#ef6f2e;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:700;
-  margin-top:6px;
-}
-
-input,select{
-  background:#3a2f2b;
-  border:1px solid #444;
-  color:#fff;
-  padding:6px;
-  border-radius:8px;
-}
-
-label{
-  font-size:12px;
-  display:block;
-  margin:2px 0;
-}
-
-.checkbox-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:6px;
-  font-size:12px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-  font-size:12px;
-}
-
-td,th{
-  border:1px solid #444;
-  padding:4px;
-}
-
-th{
-  background:#ef6f2e;
-  position:sticky;
-  top:0;
-}
+body{font-family:Arial;background:#2f2623;color:#fff;padding:16px;}
+.block{background:#3a2f2b;padding:12px;border-radius:12px;margin-bottom:12px;}
+button{background:#ef6f2e;border:none;padding:10px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;width:100%;}
+input,select{padding:6px;border-radius:8px;border:1px solid #444;background:#2f2623;color:#fff;width:100%;}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
+td,th{border:1px solid #444;padding:4px;}
+th{background:#ef6f2e;}
 </style>
 </head>
 
 <body>
 
-<h2>⚙️ COMPAS OPERATION CENTER</h2>
+<h2>📊 Отбор базы клиентов</h2>
 
-<div class="panel">
+<div class="block">
 <input type="file" id="fileInput">
 </div>
 
-<!-- SEGMENTS -->
-<div class="panel">
-<h3>📊 Сегменты</h3>
+<div class="block">
+<h3>1. Сегменты</h3>
+<label><input type="checkbox" id="allSeg"> Все</label>
 <div id="segments"></div>
-<button onclick="applyFilters()">Применить фильтр</button>
 </div>
 
-<!-- FILTERS -->
-<div class="panel">
-<h3>🔎 Условия</h3>
-
-<label>Дата последнего контакта (до)</label>
-<input type="date" id="dateLimit">
-
-<label>Минимальный оборот</label>
-<input type="number" id="turnoverMin" value="0">
+<div class="block">
+<h3>2. Фильтр</h3>
+<div id="filters"></div>
+<button onclick="addFilter()">+ добавить условие</button>
 </div>
 
-<!-- STAFF -->
-<div class="panel">
-<h3>👥 Распределение</h3>
+<div class="block">
+<h3>3. Приоритет отбора</h3>
+
+<label>Основной критерий</label>
+<select id="mainSort"></select>
+
+<select id="mainDir">
+<option value="desc">Сначала большие</option>
+<option value="asc">Сначала маленькие</option>
+</select>
+
+<label style="margin-top:10px;">Дополнительный критерий</label>
+<select id="secondSort"></select>
+
+<select id="secondDir">
+<option value="desc">Сначала большие</option>
+<option value="asc">Сначала маленькие</option>
+</select>
+
+</div>
+
+<div class="block">
+<h3>4. Квоты сотрудников</h3>
 <div id="staff"></div>
-<button onclick="distribute()">⚡ Распределить задачи</button>
 </div>
 
-<!-- EXPORT -->
-<div class="panel">
-<h3>📲 Compas экспорт</h3>
-<button onclick="exportPhones()">Скачать TXT</button>
-</div>
+<button onclick="run()">🚀 Собрать базу для задач</button>
 
+<div id="summary" class="block"></div>
 <div id="preview"></div>
 
 <script>
 
-let data = [];
-let filtered = [];
+let data=[],result=[];
+let SEG,EMP,PHONE,columns=[];
 
-let PHONE_FIELD = null;
-let EMP_FIELD = null;
-let SEG_FIELD = null;
+// LOAD
+fileInput.onchange=async(e)=>{
+const f=e.target.files[0];
+const buf=await f.arrayBuffer();
+const wb=XLSX.read(buf,{type:'array'});
+data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-// ================= SEGMENTS =================
-const SEGMENTS = [
-"Искра_Активные","Искра_Спящие","Искра_Ушедшие","Искра_Корпоративные",
-"Новички_Активные","Новички_Спящие","Новички_Ушедшие","Новички_Корпоративные",
-"Знакомые_Активные","Знакомые_Спящие","Знакомые_Ушедшие","Знакомые_Корпоративные",
-"Друзья_Активные","Друзья_Спящие","Друзья_Ушедшие","Друзья_Корпоративные",
-"Семья_Активные","Семья_Спящие","Семья_Ушедшие","Семья_Корпоративные",
-"VIC_Активные","VIC_Спящие","VIC_Ушедшие","VIC_Корпоративные"
-];
+columns=Object.keys(data[0]);
 
-// ================= LOAD =================
-fileInput.onchange = async (e)=>{
+SEG=columns.find(c=>c.toLowerCase().includes("сег"));
+EMP=columns.find(c=>c.toLowerCase().includes("сотруд"));
+PHONE=columns.find(c=>c.toLowerCase().includes("тел"));
 
-  const file = e.target.files[0];
-  const buf = await file.arrayBuffer();
+buildSegments();
+buildStaff();
 
-  const wb = XLSX.read(buf,{type:'array'});
-  const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
-  data = json;
-
-  const keys = Object.keys(data[0] || {});
-
-  PHONE_FIELD = keys.find(k => k.toLowerCase().includes("тел"));
-  EMP_FIELD = keys.find(k => k.toLowerCase().includes("сотрудник"));
-  SEG_FIELD = keys.find(k => k.toLowerCase().includes("сегмент"));
-
-  buildSegments();
-  buildStaff();
-
-  render(data);
+mainSort.innerHTML=columns.map(c=>`<option>${c}</option>`).join('');
+secondSort.innerHTML=mainSort.innerHTML;
 };
 
-// ================= SEGMENTS UI =================
+// SEGMENTS
 function buildSegments(){
-  segments.innerHTML = SEGMENTS.map(s=>`
-    <label>
-      <input type="checkbox" value="${s}">
-      ${s}
-    </label>
-  `).join('');
+let segs=[...new Set(data.map(r=>r[SEG]).filter(Boolean))];
+segments.innerHTML=segs.map(s=>`<label><input type="checkbox" value="${s}">${s}</label>`).join('');
 }
 
-// ================= STAFF =================
+// FILTER
+function addFilter(){
+filters.innerHTML+=`
+<div>
+<select class="f_col">${columns.map(c=>`<option>${c}</option>`).join('')}</select>
+<select class="f_op">
+<option value="contains">содержит</option>
+<option value="eq">=</option>
+<option value="gte">≥</option>
+<option value="lte">≤</option>
+</select>
+<input class="f_val">
+</div>`;
+}
+
+// STAFF
 function buildStaff(){
-
-  if(!EMP_FIELD) return;
-
-  let map = {};
-
-  data.forEach(r=>{
-    let s = r[EMP_FIELD] || "—";
-    map[s] = (map[s] || 0) + 1;
-  });
-
-  staff.innerHTML = Object.entries(map).map(([k,v])=>`
-    <label>
-      ${k} (${v})
-      <input type="number" value="${v}" data-s="${k}">
-    </label>
-  `).join('');
+let map={};
+data.forEach(r=>{
+let s=r[EMP]||"—";
+map[s]=(map[s]||0)+1;
+});
+staff.innerHTML=Object.entries(map).map(([k,v])=>`
+<div>${k} (${v}) <input type="number" value="50" data-s="${k}"></div>
+`).join('');
 }
 
-// ================= FILTER =================
-function applyFilters(){
+// MATCH
+function match(r){
 
-  const selected = [...document.querySelectorAll('#segments input:checked')]
-    .map(i=>i.value);
-
-  const dateLimit = document.getElementById("dateLimit").value;
-  const turnoverMin = +document.getElementById("turnoverMin").value || 0;
-
-  filtered = data.filter(r=>{
-
-    // SEGMENT
-    if(selected.length && !selected.includes(r[SEG_FIELD])){
-      return false;
-    }
-
-    // DATE FILTER
-    if(dateLimit && r["Дата последнего контакта"]){
-      const d = new Date(r["Дата последнего контакта"].split(".").reverse().join("-"));
-      if(d > new Date(dateLimit)) return false;
-    }
-
-    // TURNOVER
-    if(r["Оборот"] && +r["Оборот"] < turnoverMin){
-      return false;
-    }
-
-    return true;
-  });
-
-  render(filtered);
+if(!allSeg.checked){
+let sel=[...document.querySelectorAll('#segments input:checked')].map(i=>i.value);
+if(sel.length && !sel.includes(r[SEG])) return false;
 }
 
-// ================= DISTRIBUTE =================
-function distribute(){
+for(let f of document.querySelectorAll('#filters > div')){
+let col=f.querySelector('.f_col').value;
+let op=f.querySelector('.f_op').value;
+let val=f.querySelector('.f_val').value;
+let v=r[col];
 
-  const inputs = document.querySelectorAll('#staff input');
-
-  let limits = {};
-  inputs.forEach(i=>{
-    limits[i.dataset.s] = +i.value;
-  });
-
-  let counters = {};
-  Object.keys(limits).forEach(s=>counters[s]=0);
-
-  const staff = Object.keys(limits);
-
-  // приоритет: старые контакты первыми
-  const sorted = [...filtered].sort((a,b)=>{
-    const da = new Date((a["Дата последнего контакта"]||"01.01.2000").split(".").reverse().join("-"));
-    const db = new Date((b["Дата последнего контакта"]||"01.01.2000").split(".").reverse().join("-"));
-    return da - db;
-  });
-
-  let i = 0;
-
-  for(let r of sorted){
-
-    let tries = 0;
-
-    while(tries < staff.length){
-
-      let s = staff[i];
-
-      if(counters[s] < limits[s]){
-        r[EMP_FIELD] = s;
-        counters[s]++;
-        i = (i+1) % staff.length;
-        break;
-      }
-
-      i = (i+1) % staff.length;
-      tries++;
-    }
-  }
-
-  filtered = sorted;
-  render(filtered);
+if(op==="contains" && !String(v).toLowerCase().includes(val.toLowerCase())) return false;
+if(op==="eq" && v!=val) return false;
+if(op==="gte" && +v<+val) return false;
+if(op==="lte" && +v>+val) return false;
 }
 
-// ================= EXPORT =================
-function exportPhones(){
-
-  const phones = filtered
-    .map(r => String(r[PHONE_FIELD] || "").replace(/\D/g,''))
-    .filter(v => v.length >= 10);
-
-  const unique = [...new Set(phones)];
-
-  if(!unique.length){
-    alert("Нет номеров для выгрузки");
-    return;
-  }
-
-  const blob = new Blob([unique.join("\n")], {type:"text/plain"});
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "compas_phones.txt";
-  a.click();
+return true;
 }
 
-// ================= RENDER =================
+// RUN
+function run(){
+
+let filtered=data.filter(match);
+
+// SORT
+let mCol=mainSort.value;
+let mDir=mainDir.value;
+let sCol=secondSort.value;
+let sDir=secondDir.value;
+
+filtered.sort((a,b)=>{
+
+let v1=+a[mCol]||0;
+let v2=+b[mCol]||0;
+
+if(v1!==v2) return mDir==="desc"?v2-v1:v1-v2;
+
+let s1=+a[sCol]||0;
+let s2=+b[sCol]||0;
+
+return sDir==="desc"?s2-s1:s1-s2;
+});
+
+// QUOTA
+let quotas={};
+document.querySelectorAll('#staff input').forEach(i=>{
+quotas[i.dataset.s]=+i.value;
+});
+
+let counters={};
+Object.keys(quotas).forEach(s=>counters[s]=0);
+
+result=[];
+
+for(let r of filtered){
+for(let s in quotas){
+if(counters[s]<quotas[s]){
+result.push({...r,[EMP]:s});
+counters[s]++;
+break;
+}
+}
+}
+
+// SUMMARY
+summary.innerHTML=`
+<b>Всего:</b> ${result.length}<br>
+${Object.entries(counters).map(([k,v])=>`${k}: ${v}`).join("<br>")}
+`;
+
+// PREVIEW
+render(result);
+}
+
+// RENDER
 function render(rows){
 
-  if(!rows.length){
-    preview.innerHTML = "<p>Нет данных</p>";
-    return;
-  }
+if(!rows.length){
+preview.innerHTML="Нет данных";
+return;
+}
 
-  const keys = Object.keys(rows[0]);
+let keys=Object.keys(rows[0]);
 
-  let html = "<table><tr>" + keys.map(k=>`<th>${k}</th>`).join("") + "</tr>";
+let html="<table><tr>"+keys.map(k=>`<th>${k}</th>`).join("")+"</tr>";
 
-  rows.slice(0,100).forEach(r=>{
-    html += "<tr>" + keys.map(k=>`<td>${r[k] ?? ""}</td>`).join("") + "</tr>";
-  });
+rows.slice(0,50).forEach(r=>{
+html+="<tr>"+keys.map(k=>`<td>${r[k]||""}</td>`).join("")+"</tr>";
+});
 
-  html += "</table>";
+html+="</table>";
 
-  preview.innerHTML = html;
+preview.innerHTML=html;
 }
 
 </script>
