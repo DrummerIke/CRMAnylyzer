@@ -47,7 +47,7 @@
   }
   .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(239,111,46,.14); }
   h1{ margin:0; font-size:30px; line-height:1.05; letter-spacing:-.02em; }
-  .sub{ margin:8px 0 0; color:var(--muted2); font-size:14px; font-weight:700; max-width:860px; }
+  .sub{ margin:8px 0 0; color:var(--muted2); font-size:14px; font-weight:700; max-width:980px; }
 
   .top-actions{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
@@ -101,7 +101,7 @@
     padding:16px 18px 0;
   }
   .card-title{
-    display:flex; align-items:center; gap:10px; min-width:0;
+    display:flex; align-items:flex-start; gap:10px; min-width:0;
   }
   .step{
     width:30px; height:30px; border-radius:10px; flex:0 0 auto;
@@ -152,21 +152,7 @@
     font-weight:700;
   }
 
-  .subgrid{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-  }
-
-  .tiny-toggle{
-    display:flex; align-items:center; gap:10px;
-    padding:10px 12px; border-radius:14px;
-    border:1px solid var(--line); background:rgba(255,255,255,.04);
-    color:#fff; font-weight:800; font-size:13px;
-  }
-  .tiny-toggle input{ width:18px; height:18px; }
-
-  .filters, .priority, .employee-list{
+  .filters, .priority{
     display:grid; gap:10px;
   }
 
@@ -190,6 +176,7 @@
     background:rgba(239,111,46,.14); color:#ffd7c2; border:1px solid rgba(239,111,46,.22);
     font-size:12px; flex:0 0 auto;
   }
+
   .rule-grid{
     display:grid;
     grid-template-columns: 1.45fr .95fr 1fr 1fr auto;
@@ -199,20 +186,10 @@
   .rule-grid.priority-grid{
     grid-template-columns: 1.5fr 1fr auto;
   }
-  .operator-inputs{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:10px;
-  }
-
-  .group-ops{
-    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;
-  }
 
   .segments-toolbar{
     display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;
   }
-
   .seg-groups{
     display:grid; gap:14px;
   }
@@ -257,59 +234,71 @@
     font-size:12px; opacity:.9; font-weight:900;
     padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.14);
   }
-  .seg-pill.active .count{
-    background:rgba(255,255,255,.18);
-  }
   .seg-empty{
     color:var(--muted2); font-size:13px; font-weight:700;
   }
 
-  .employee-grid{
+  .employee-toolbar{
     display:grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
+    grid-template-columns: 1fr auto;
     gap:12px;
+    align-items:end;
+    margin-bottom:12px;
   }
-  .employee-card{
+
+  .employee-table{
     border:1px solid var(--line);
-    background:rgba(255,255,255,.03);
     border-radius:18px;
-    padding:12px;
+    overflow:hidden;
+    background:rgba(255,255,255,.03);
   }
-  .employee-top{
-    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
-    margin-bottom:8px;
+  .employee-table-head{
+    display:grid;
+    grid-template-columns: 1.4fr .45fr .55fr .35fr;
+    gap:10px;
+    padding:12px 14px;
+    background:rgba(255,255,255,.04);
+    color:var(--muted);
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    border-bottom:1px solid var(--line);
   }
+  .employee-rows{
+    display:grid;
+    max-height:420px;
+    overflow:auto;
+  }
+  .employee-row{
+    display:grid;
+    grid-template-columns: 1.4fr .45fr .55fr .35fr;
+    gap:10px;
+    align-items:center;
+    padding:12px 14px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .employee-row:nth-child(even){ background:rgba(255,255,255,.015); }
   .employee-name{
     font-weight:900; font-size:14px; line-height:1.2;
   }
   .employee-meta{
-    font-size:12px; color:var(--muted2); font-weight:800; margin-top:4px;
+    margin-top:4px;
+    font-size:12px; color:var(--muted2); font-weight:800;
   }
-  .employee-stats{
-    display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 0;
+  .quota-input{
+    text-align:center; font-weight:900;
   }
-  .chip{
-    font-size:12px; font-weight:800; color:#fff;
-    padding:6px 10px; border-radius:999px;
-    background:rgba(0,0,0,.16); border:1px solid rgba(255,255,255,.08);
-  }
-  .chip.good{ color:#cbffd9; border-color:rgba(114,211,155,.2); background:rgba(114,211,155,.08); }
-  .chip.warn{ color:#ffe5b3; border-color:rgba(255,210,122,.22); background:rgba(255,210,122,.08); }
-
-  .employee-inputs{
-    display:grid;
-    grid-template-columns: 1fr 120px;
-    gap:10px;
-    align-items:center;
-    margin-top:10px;
-  }
-  .employee-inputs input[type="number"]{ text-align:center; font-weight:900; }
-  .employee-footer{
-    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px;
-    color:var(--muted2); font-size:12px; font-weight:800;
-  }
-  .employee-check{
-    display:flex; align-items:center; gap:8px; font-weight:800;
+  .employee-row .tiny-toggle{
+    display:flex; align-items:center; justify-content:center;
+    min-height:46px;
+    padding:0 10px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.12);
+    color:#fff;
+    font-weight:800;
+    font-size:13px;
   }
 
   .summary-grid{
@@ -394,13 +383,13 @@
   @media (max-width: 1220px){
     .grid{ grid-template-columns:1fr; }
     .summary-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .employee-grid{ grid-template-columns:1fr; }
   }
   @media (max-width: 900px){
     .field-row{ grid-template-columns:1fr; }
     .rule-grid{ grid-template-columns:1fr; }
     .rule-grid.priority-grid{ grid-template-columns:1fr; }
-    .operator-inputs{ grid-template-columns:1fr; }
+    .employee-toolbar{ grid-template-columns:1fr; }
+    .employee-table-head, .employee-row{ grid-template-columns:1fr; }
     .summary-grid{ grid-template-columns:1fr; }
     .hero{ flex-direction:column; }
     .top-actions{ justify-content:flex-start; }
@@ -415,14 +404,14 @@
       <div class="eyebrow"><span class="dot"></span><span>COMPAS • CAMPAIGN ENGINE</span></div>
       <h1>Операционный центр отбора клиентской базы</h1>
       <p class="sub">
-        Сначала загружаем базу. Потом выбираем только те сегменты, которые реально есть в этом файле.
-        Далее задаём гибкие условия по любым столбцам, определяем приоритет отбора, смотрим по каждому сотруднику,
-        сколько найдено, вручную ставим лимиты и в конце выгружаем только номера для запуска коммуникаций.
+        1) загружаем базу, 2) выбираем сегменты только из этой выгрузки, 3) задаём гибкие условия по любым полям,
+        4) настраиваем приоритет отбора, 5) смотрим по каждому сотруднику, сколько нашлось, 6) задаём квоты и потолок,
+        7) выгружаем только номера для запуска коммуникаций.
       </p>
     </div>
 
     <div class="top-actions">
-      <button id="btnLoadDemo" class="btn-secondary" type="button">Пример логики</button>
+      <button id="btnLoadDemo" class="btn-secondary" type="button">Показать логику</button>
       <button id="btnAnalyze" class="btn" type="button" disabled>2. Посчитать отбор</button>
       <button id="btnBuildFinal" class="btn" type="button" disabled>3. Собрать итог</button>
       <button id="btnExport" class="btn" type="button" disabled>4. Выгрузить номера</button>
@@ -437,8 +426,8 @@
           <div class="card-title">
             <div class="step">1</div>
             <div>
-              <h2>Загрузка базы и поля</h2>
-              <p>Файл загружается один раз, дальше система работает уже по этой базе.</p>
+              <h2>Загрузка базы</h2>
+              <p>Фиксированные поля: Категория, Сотрудник, Телефон.</p>
             </div>
           </div>
         </div>
@@ -448,42 +437,36 @@
               <label class="label">Файл .xlsx / .csv</label>
               <input id="fileInput" type="file" accept=".xlsx,.csv" />
             </div>
-
             <div class="field">
-              <label class="label">Поле сегмента</label>
-              <select id="segmentField"></select>
+              <label class="label">Категория</label>
+              <div class="employee-row tiny-toggle" style="min-height:46px;">Категория</div>
             </div>
-
             <div class="field">
-              <label class="label">Поле сотрудника</label>
-              <select id="employeeField"></select>
+              <label class="label">Сотрудник</label>
+              <div class="employee-row tiny-toggle" style="min-height:46px;">Сотрудник</div>
             </div>
           </div>
 
           <div class="field-row" style="margin-top:12px;">
             <div class="field">
-              <label class="label">Поле телефона</label>
-              <select id="phoneField"></select>
+              <label class="label">Телефон</label>
+              <div class="employee-row tiny-toggle" style="min-height:46px;">Телефон</div>
             </div>
-
             <div class="field">
               <label class="label">Статус загрузки</label>
-              <div class="tiny-toggle" style="min-height:46px;">
+              <div class="employee-row tiny-toggle" style="min-height:46px;">
                 <span id="loadInfo">Файл не загружен</span>
               </div>
             </div>
-
             <div class="field">
-              <label class="label">Проверка формата</label>
-              <div class="tiny-toggle" style="min-height:46px;">
-                <span id="fieldInfo">Поля будут определены автоматически</span>
+              <label class="label">Проверка полей</label>
+              <div class="employee-row tiny-toggle" style="min-height:46px;">
+                <span id="fieldInfo">Ожидаем файл</span>
               </div>
             </div>
           </div>
 
-          <div class="note">
-            Дата в превью показывается как <b>DD.MM.YYYY</b>, суммы — с разделителями и знаком рубля.
-          </div>
+          <div class="note">Если в файле нет <b>Категория / Сотрудник / Телефон</b>, система остановится и покажет ошибку.</div>
         </div>
       </section>
 
@@ -493,20 +476,19 @@
             <div class="step">2</div>
             <div>
               <h2>Сегменты из этой выгрузки</h2>
-              <p>Показываются только значения сегментов, которые реально есть в файле.</p>
+              <p>Показываются только значения, которые реально есть в базе. Полные названия, без сокращений.</p>
             </div>
           </div>
         </div>
         <div class="card-body">
           <div class="segments-toolbar">
-            <label class="tiny-toggle"><input id="useSegments" type="checkbox" checked /> Учитывать сегменты</label>
             <button id="btnAllSegments" class="btn-ghost" type="button">Выбрать все</button>
             <button id="btnClearSegments" class="btn-ghost" type="button">Снять все</button>
           </div>
           <div id="segmentsPanel" class="seg-groups">
             <div class="seg-empty">Загрузите файл, затем здесь появятся сегменты.</div>
           </div>
-          <div class="note">Сегменты сгруппированы красиво: блок клиента → статус. Остальные не показываются.</div>
+          <div class="note">Сначала идут сегменты <b>VIC</b>, потом остальные по алфавиту.</div>
         </div>
       </section>
 
@@ -516,7 +498,7 @@
             <div class="step">3</div>
             <div>
               <h2>Гибкие условия отбора</h2>
-              <p>Любой столбец, понятный оператор, отдельные поля для дат и чисел.</p>
+              <p>Любой столбец, понятные операторы, отдельные поля для дат и чисел.</p>
             </div>
           </div>
         </div>
@@ -546,9 +528,7 @@
             <button id="btnAddPriority" class="btn-secondary" type="button">+ Добавить критерий</button>
             <button id="btnDefaultPriority" class="btn-ghost" type="button">Заполнить по умолчанию</button>
           </div>
-          <div class="note">
-            Порядок критериев важен: первый решает больше всего. Например: сначала старые контакты, потом больший оборот.
-          </div>
+          <div class="note">Порядок критериев важен: первый решает больше всего. Например, сначала старые контакты, потом больший оборот.</div>
         </div>
       </section>
 
@@ -562,15 +542,32 @@
             <div class="step">5</div>
             <div>
               <h2>Сотрудники и квоты</h2>
-              <p>Сначала система показывает, сколько нашлось по каждому сотруднику. Потом ты задаёшь, сколько взять.</p>
+              <p>Верхний предел задаётся один раз и работает для всех сотрудников.</p>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <div id="employeePanel" class="employee-grid">
-            <div class="seg-empty">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>
+          <div class="employee-toolbar">
+            <div class="field">
+              <label class="label">Верхний предел на сотрудника</label>
+              <input id="globalCap" type="number" value="100" min="0" />
+            </div>
+            <div class="tiny-toggle" style="min-height:46px;">
+              Можно уменьшать вручную или исключать сотрудника галочкой.
+            </div>
           </div>
-          <div class="note">Если нужно исключить сотрудника — поставь галочку. Если нужно уменьшить, просто измени лимит.</div>
+
+          <div class="employee-table">
+            <div class="employee-table-head">
+              <span>Сотрудник</span>
+              <span>Найдено</span>
+              <span>Взять</span>
+              <span>Исключить</span>
+            </div>
+            <div id="employeeRows" class="employee-rows">
+              <div class="seg-empty" style="padding:14px;">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -589,22 +586,22 @@
             <div class="summary-card">
               <div class="k">Загрузка</div>
               <div class="v">—</div>
-              <div class="s">Ожидаем файл</div>
+              <div class="s">строк в базе</div>
             </div>
             <div class="summary-card">
               <div class="k">Подошло</div>
               <div class="v">—</div>
-              <div class="s">После фильтров и сегментов</div>
+              <div class="s">после фильтров и сегментов</div>
             </div>
             <div class="summary-card">
               <div class="k">Выгрузка</div>
               <div class="v">—</div>
-              <div class="s">Финальные номера</div>
+              <div class="s">финальных номеров</div>
             </div>
             <div class="summary-card">
               <div class="k">Сотрудники</div>
               <div class="v">—</div>
-              <div class="s">По текущему пулу</div>
+              <div class="s">по текущему пулу</div>
             </div>
           </div>
 
@@ -638,50 +635,48 @@
 <script>
 'use strict';
 
+const FIXED_FIELDS = {
+  segment: 'Категория',
+  employee: 'Сотрудник',
+  phone: 'Телефон'
+};
+
 const state = {
   rawData: [],
   columns: [],
   columnTypes: {},
-  fields: {
-    segment: '',
-    employee: '',
-    phone: ''
-  },
+  fields: { ...FIXED_FIELDS },
   selectedSegments: new Set(),
-  segmentEnabled: true,
+  loaded: false,
   candidateRows: [],
   finalRows: [],
   employeeGroups: {},
-  employeeOrder: [],
-  loaded: false
+  employeeOrder: []
 };
 
 const el = {
   fileInput: document.getElementById('fileInput'),
-  segmentField: document.getElementById('segmentField'),
-  employeeField: document.getElementById('employeeField'),
-  phoneField: document.getElementById('phoneField'),
   loadInfo: document.getElementById('loadInfo'),
   fieldInfo: document.getElementById('fieldInfo'),
   segmentsPanel: document.getElementById('segmentsPanel'),
-  useSegments: document.getElementById('useSegments'),
-  btnAllSegments: document.getElementById('btnAllSegments'),
-  btnClearSegments: document.getElementById('btnClearSegments'),
   filtersPanel: document.getElementById('filtersPanel'),
-  btnAddFilter: document.getElementById('btnAddFilter'),
-  btnClearFilters: document.getElementById('btnClearFilters'),
   priorityPanel: document.getElementById('priorityPanel'),
-  btnAddPriority: document.getElementById('btnAddPriority'),
-  btnDefaultPriority: document.getElementById('btnDefaultPriority'),
-  employeePanel: document.getElementById('employeePanel'),
+  employeeRows: document.getElementById('employeeRows'),
   summaryPanel: document.getElementById('summaryPanel'),
   summaryLines: document.getElementById('summaryLines'),
-  status: document.getElementById('status'),
   previewWrap: document.getElementById('previewWrap'),
+  status: document.getElementById('status'),
   btnAnalyze: document.getElementById('btnAnalyze'),
   btnBuildFinal: document.getElementById('btnBuildFinal'),
   btnExport: document.getElementById('btnExport'),
-  btnLoadDemo: document.getElementById('btnLoadDemo')
+  btnAllSegments: document.getElementById('btnAllSegments'),
+  btnClearSegments: document.getElementById('btnClearSegments'),
+  btnAddFilter: document.getElementById('btnAddFilter'),
+  btnClearFilters: document.getElementById('btnClearFilters'),
+  btnAddPriority: document.getElementById('btnAddPriority'),
+  btnDefaultPriority: document.getElementById('btnDefaultPriority'),
+  btnLoadDemo: document.getElementById('btnLoadDemo'),
+  globalCap: document.getElementById('globalCap')
 };
 
 function escapeHtml(value){
@@ -700,15 +695,6 @@ function setStatus(text, type=''){
 
 function normalizeText(v){
   return String(v ?? '').trim();
-}
-
-function detectFieldByName(columns, patterns){
-  const lower = columns.map(c => [c, c.toLowerCase()]);
-  for(const p of patterns){
-    const found = lower.find(([orig, low]) => low.includes(p));
-    if(found) return found[0];
-  }
-  return columns[0] || '';
 }
 
 function isEmptyValue(v){
@@ -811,11 +797,10 @@ function isDateColumn(col){
 function isPhoneColumn(col){
   return /тел|phone|mobile|моб/i.test(col);
 }
-function isEmployeeColumn(col){
-  return /сотрудник|manager|менеджер|employee/i.test(col);
-}
-function isSegmentColumn(col){
-  return /сегмент|segment/i.test(col);
+
+function findFixedColumn(name){
+  const target = name.trim().toLowerCase();
+  return state.columns.find(c => String(c).trim().toLowerCase() === target) || '';
 }
 
 function inferColumnType(col, rows){
@@ -842,17 +827,13 @@ function rebuildColumnTypes(){
   }
 }
 
+function getFieldType(col){
+  return state.columnTypes[col] || 'text';
+}
+
 function populateFieldSelect(select, selected){
   select.innerHTML = state.columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   if (selected && state.columns.includes(selected)) select.value = selected;
-}
-
-function renderFieldSelectors(){
-  populateFieldSelect(el.segmentField, state.fields.segment || detectFieldByName(state.columns, ['сегмент']));
-  populateFieldSelect(el.employeeField, state.fields.employee || detectFieldByName(state.columns, ['сотрудник', 'менеджер', 'employee']));
-  populateFieldSelect(el.phoneField, state.fields.phone || detectFieldByName(state.columns, ['тел', 'phone', 'mobile']));
-
-  el.fieldInfo.textContent = state.columns.length ? `Найдено столбцов: ${state.columns.length}` : 'Поля будут определены автоматически';
 }
 
 function getOperatorOptions(type){
@@ -913,8 +894,89 @@ function getDirectionOptions(type){
   ];
 }
 
-function getFieldType(col){
-  return state.columnTypes[col] || 'text';
+function segmentBucket(value){
+  const v = String(value ?? '').trim();
+  if (/^VIC/i.test(v)) return 0;
+  if (/^[А-Яа-яЁё]/.test(v)) return 1;
+  return 2;
+}
+
+function buildSegmentsPanel(){
+  const segField = state.fields.segment;
+  if (!segField || !state.columns.includes(segField)) {
+    el.segmentsPanel.innerHTML = `<div class="seg-empty">Поле «Категория» не найдено.</div>`;
+    return;
+  }
+
+  const values = new Map();
+  for (const row of state.rawData) {
+    const raw = normalizeText(row[segField]);
+    const value = raw === '' ? 'Без анкеты' : raw;
+    values.set(value, (values.get(value) || 0) + 1);
+  }
+
+  const entries = [...values.entries()]
+    .sort((a,b) => {
+      const ga = segmentBucket(a[0]);
+      const gb = segmentBucket(b[0]);
+      if (ga !== gb) return ga - gb;
+      return a[0].localeCompare(b[0], 'ru', { sensitivity:'base' });
+    });
+
+  state.selectedSegments = new Set(entries.map(([v]) => v));
+
+  const groupMap = new Map([
+    ['VIC', []],
+    ['Русские сегменты', []],
+    ['Прочее', []]
+  ]);
+
+  for (const [value, count] of entries) {
+    const bucket = segmentBucket(value);
+    const group = bucket === 0 ? 'VIC' : bucket === 1 ? 'Русские сегменты' : 'Прочее';
+    groupMap.get(group).push({ value, count });
+  }
+
+  el.segmentsPanel.innerHTML = [...groupMap.entries()].map(([group, items]) => {
+    if (!items.length) return '';
+    const total = items.reduce((sum, i) => sum + i.count, 0);
+    const pills = items.map(({ value, count }) => `
+      <button type="button" class="seg-pill active" data-seg="${escapeHtml(value)}">
+        <span>${escapeHtml(value)}</span>
+        <span class="count">${count}</span>
+      </button>
+    `).join('');
+
+    return `
+      <div class="seg-group">
+        <div class="seg-head">
+          <h3>${escapeHtml(group)}</h3>
+          <div class="seg-count">${total} записей</div>
+        </div>
+        <div class="seg-pills">${pills}</div>
+      </div>
+    `;
+  }).join('') || `<div class="seg-empty">В выбранном поле нет значений сегмента.</div>`;
+
+  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const seg = btn.dataset.seg;
+      if (btn.classList.contains('active')) state.selectedSegments.add(seg);
+      else state.selectedSegments.delete(seg);
+    });
+  });
+
+  setStatus(`Сегменты построены: ${state.selectedSegments.size} значений`, 'good');
+}
+
+function toggleSegments(active){
+  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
+    btn.classList.toggle('active', active);
+    const seg = btn.dataset.seg;
+    if (active) state.selectedSegments.add(seg);
+    else state.selectedSegments.delete(seg);
+  });
 }
 
 function addFilterRow(prefill = {}){
@@ -944,10 +1006,7 @@ function addFilterRow(prefill = {}){
         <label class="label">До</label>
         <input class="filter-value2" type="text" />
       </div>
-      <div class="field">
-        <label class="label">&nbsp;</label>
-        <div class="tiny-toggle"><span class="filter-type-label">тип</span></div>
-      </div>
+      <div></div>
     </div>
   `;
   el.filtersPanel.appendChild(row);
@@ -956,17 +1015,13 @@ function addFilterRow(prefill = {}){
   const op = row.querySelector('.filter-op');
   const v1 = row.querySelector('.filter-value1');
   const v2 = row.querySelector('.filter-value2');
-  const typeLabel = row.querySelector('.filter-type-label');
   const removeBtn = row.querySelector('[data-remove="1"]');
 
   populateFieldSelect(field, prefill.field || state.columns[0]);
-  const initialField = field.value;
-  const initialType = getFieldType(initialField);
 
   function syncFilterRow(){
     const selectedField = field.value;
     const type = getFieldType(selectedField);
-    typeLabel.textContent = type === 'date' ? 'дата' : type === 'number' ? 'число' : 'текст';
 
     const currentOp = op.value;
     op.innerHTML = getOperatorOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
@@ -1025,25 +1080,19 @@ function addPriorityRow(prefill = {}){
         <label class="label">Порядок</label>
         <select class="priority-dir"></select>
       </div>
-      <div class="field">
-        <label class="label">&nbsp;</label>
-        <div class="tiny-toggle"><span class="priority-type-label">тип</span></div>
-      </div>
+      <div></div>
     </div>
   `;
   el.priorityPanel.appendChild(row);
 
   const field = row.querySelector('.priority-field');
   const dir = row.querySelector('.priority-dir');
-  const typeLabel = row.querySelector('.priority-type-label');
   const removeBtn = row.querySelector('[data-remove="1"]');
 
   populateFieldSelect(field, prefill.field || state.columns[0]);
 
   function syncPriorityRow(){
     const type = getFieldType(field.value);
-    typeLabel.textContent = type === 'date' ? 'дата' : type === 'number' ? 'число' : 'текст';
-
     const currentDir = dir.value || prefill.dir || '';
     dir.innerHTML = getDirectionOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
     if ([...dir.options].some(o => o.value === currentDir)) dir.value = currentDir;
@@ -1077,122 +1126,15 @@ function clearPriorityRows(){
 function setDefaultPriorityRows(){
   clearPriorityRows();
 
-  const candidates = [];
-  const dateField = detectFieldByName(state.columns, ['дата', 'контакт']);
-  const turnoverField = detectFieldByName(state.columns, ['оборот', 'сумм', 'выруч']);
-  const lastContactField = state.columns.find(c => /дата.*контакт|послед.*контакт/i.test(c)) || dateField;
+  const lastContact = state.columns.find(c => /дата.*контакт|послед.*контакт/i.test(c)) || '';
+  const turnover = state.columns.find(c => /оборот|сумм|выруч/i.test(c)) || '';
 
-  if (lastContactField) {
-    candidates.push({
-      field: lastContactField,
-      dir: 'asc'
-    });
-  }
-  if (turnoverField && turnoverField !== lastContactField) {
-    candidates.push({
-      field: turnoverField,
-      dir: 'desc'
-    });
-  }
-  if (!candidates.length && state.columns[0]) {
-    candidates.push({ field: state.columns[0], dir: 'asc' });
-  }
+  const defaults = [];
+  if (lastContact) defaults.push({ field: lastContact, dir: 'asc' });
+  if (turnover && turnover !== lastContact) defaults.push({ field: turnover, dir: 'desc' });
+  if (!defaults.length && state.columns[0]) defaults.push({ field: state.columns[0], dir: 'asc' });
 
-  candidates.forEach(c => addPriorityRow(c));
-}
-
-function buildSegmentsPanel(){
-  const segField = state.fields.segment;
-  if (!segField || !state.columns.includes(segField)) {
-    el.segmentsPanel.innerHTML = `<div class="seg-empty">Выберите поле сегмента в шаге 1.</div>`;
-    return;
-  }
-
-  const values = new Map();
-  for (const row of state.rawData) {
-    const raw = normalizeText(row[segField]);
-    const value = raw === '' ? 'Без анкеты' : raw;
-    values.set(value, (values.get(value) || 0) + 1);
-  }
-
-  const entries = [...values.entries()];
-  entries.sort((a,b) => {
-    const ga = segmentGroupName(a[0]);
-    const gb = segmentGroupName(b[0]);
-    if (ga !== gb) return ga.localeCompare(gb, 'ru');
-    return a[0].localeCompare(b[0], 'ru');
-  });
-
-  const groupMap = new Map();
-  for (const [value, count] of entries) {
-    const group = segmentGroupName(value);
-    if (!groupMap.has(group)) groupMap.set(group, []);
-    groupMap.get(group).push({ value, count });
-  }
-
-  state.selectedSegments = new Set(entries.map(([v]) => v));
-
-  const html = [...groupMap.entries()].map(([group, items]) => {
-    const groupTotal = items.reduce((sum, item) => sum + item.count, 0);
-    const pills = items.map(({ value, count }) => `
-      <button type="button" class="seg-pill active" data-seg="${escapeHtml(value)}">
-        <span>${escapeHtml(segmentDisplayName(value))}</span>
-        <span class="count">${count}</span>
-      </button>
-    `).join('');
-
-    return `
-      <div class="seg-group">
-        <div class="seg-head">
-          <h3>${escapeHtml(group)}</h3>
-          <div class="seg-count">${groupTotal} записей</div>
-        </div>
-        <div class="seg-pills">${pills}</div>
-      </div>
-    `;
-  }).join('');
-
-  el.segmentsPanel.innerHTML = html || `<div class="seg-empty">В выбранном поле сегмента нет значений.</div>`;
-
-  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('active');
-      const seg = btn.dataset.seg;
-      if (btn.classList.contains('active')) state.selectedSegments.add(seg);
-      else state.selectedSegments.delete(seg);
-    });
-  });
-
-  setStatus(`Сегменты построены: ${state.selectedSegments.size} значений`, 'good');
-}
-
-function segmentGroupName(value){
-  const v = String(value ?? '').trim();
-  if (!v) return 'Пусто';
-  if (v === 'none') return 'none';
-  if (v === 'Без анкеты') return 'Без анкеты';
-  if (!v.includes('_')) return 'Прочее';
-
-  const [left] = v.split('_');
-  return left || 'Прочее';
-}
-
-function segmentDisplayName(value){
-  const v = String(value ?? '').trim();
-  if (!v) return 'Пусто';
-  if (v === 'none') return 'none';
-  if (v === 'Без анкеты') return 'Без анкеты';
-  if (!v.includes('_')) return v;
-  return v.split('_').slice(1).join('_') || v;
-}
-
-function toggleSegments(active){
-  el.segmentsPanel.querySelectorAll('.seg-pill').forEach(btn => {
-    btn.classList.toggle('active', active);
-    const seg = btn.dataset.seg;
-    if (active) state.selectedSegments.add(seg);
-    else state.selectedSegments.delete(seg);
-  });
+  defaults.forEach(d => addPriorityRow(d));
 }
 
 function readFiltersFromUI(){
@@ -1302,9 +1244,7 @@ function compareRowsByPriority(a, b, rules){
       cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'ru', { sensitivity:'base' });
     }
 
-    if (cmp !== 0) {
-      return r.dir === 'asc' ? cmp : -cmp;
-    }
+    if (cmp !== 0) return r.dir === 'asc' ? cmp : -cmp;
   }
   return (a.__idx || 0) - (b.__idx || 0);
 }
@@ -1334,50 +1274,125 @@ function formatForDisplay(v, col){
   return String(v);
 }
 
-function renderSummary(stage){
-  const loaded = state.rawData.length;
-  const candidate = state.candidateRows.length;
-  const final = state.finalRows.length;
-  const employees = state.employeeOrder.length;
+function getGlobalCap(){
+  const cap = Number(el.globalCap.value || 0);
+  return Number.isFinite(cap) && cap >= 0 ? cap : 100;
+}
 
-  el.summaryPanel.innerHTML = `
-    <div class="summary-card">
-      <div class="k">Загрузка</div>
-      <div class="v">${loaded ? new Intl.NumberFormat('ru-RU').format(loaded) : '—'}</div>
-      <div class="s">строк в базе</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Подошло</div>
-      <div class="v">${candidate ? new Intl.NumberFormat('ru-RU').format(candidate) : '—'}</div>
-      <div class="s">после сегментов и условий</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Выгрузка</div>
-      <div class="v">${final ? new Intl.NumberFormat('ru-RU').format(final) : '—'}</div>
-      <div class="s">финальных номеров</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Сотрудники</div>
-      <div class="v">${employees ? employees : '—'}</div>
-      <div class="s">по текущему пулу</div>
-    </div>
-  `;
+function syncEmployeeCapUI(){
+  const cap = getGlobalCap();
+  document.querySelectorAll('.employee-row').forEach(row => {
+    const found = Number(row.dataset.found || 0);
+    const quotaInput = row.querySelector('.quota-input');
+    const exclude = row.querySelector('.exclude-check');
+    const qMax = Math.min(found, cap);
 
-  const segSummary = getSelectedSegmentsText();
-  const filterSummary = getFilterSummaryText();
-  const prioritySummary = getPrioritySummaryText();
-  const empSummary = getEmployeeSummaryText(stage);
+    quotaInput.max = String(qMax);
 
-  el.summaryLines.innerHTML = `
-    <div class="summary-line"><b>Сегменты:</b> ${segSummary}</div>
-    <div class="summary-line"><b>Условия:</b> ${filterSummary}</div>
-    <div class="summary-line"><b>Приоритет:</b> ${prioritySummary}</div>
-    <div class="summary-line"><b>По сотрудникам:</b><br>${empSummary}</div>
-  `;
+    if (exclude.checked) {
+      quotaInput.value = 0;
+      quotaInput.disabled = true;
+    } else {
+      quotaInput.disabled = false;
+      let q = Number(quotaInput.value || 0);
+      if (!Number.isFinite(q) || q < 0) q = qMax;
+      if (q > qMax) q = qMax;
+      quotaInput.value = q;
+    }
+
+    row.querySelector('.take-preview').textContent = `К выдаче: ${Number(quotaInput.value || 0)}`;
+  });
+}
+
+function buildEmployeePanel(){
+  const employeeField = state.fields.employee;
+  if (!employeeField || !state.columns.includes(employeeField)) {
+    el.employeeRows.innerHTML = `<div class="seg-empty" style="padding:14px;">Поле «Сотрудник» не найдено.</div>`;
+    return;
+  }
+
+  const groups = new Map();
+  for (const row of state.candidateRows) {
+    const name = normalizeText(row[employeeField]) || 'Без сотрудника';
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(row);
+  }
+
+  const order = [...groups.entries()]
+    .map(([name, rows]) => ({ name, rows, count: rows.length }))
+    .sort((a,b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'));
+
+  state.employeeGroups = Object.fromEntries(order.map(x => [x.name, x.rows]));
+  state.employeeOrder = order.map(x => x.name);
+
+  if (!order.length) {
+    el.employeeRows.innerHTML = `<div class="seg-empty" style="padding:14px;">После расчёта здесь появятся сотрудники и найденные по ним записи.</div>`;
+    return;
+  }
+
+  const cap = getGlobalCap();
+
+  el.employeeRows.innerHTML = order.map(({ name, count }) => {
+    const initial = Math.min(count, cap);
+    return `
+      <div class="employee-row" data-employee="${escapeHtml(name)}" data-found="${count}">
+        <div>
+          <div class="employee-name">${escapeHtml(name)}</div>
+          <div class="employee-meta">Найдено: ${new Intl.NumberFormat('ru-RU').format(count)} записей</div>
+        </div>
+        <div class="tiny-toggle">${new Intl.NumberFormat('ru-RU').format(count)}</div>
+        <div>
+          <input class="quota-input" type="number" min="0" max="${initial}" value="${initial}" />
+        </div>
+        <div class="tiny-toggle" style="padding:0 10px;">
+          <label style="display:flex; align-items:center; gap:8px; width:100%; justify-content:center; cursor:pointer;">
+            <input class="exclude-check" type="checkbox" style="width:18px; height:18px; margin:0;" />
+            <span>Нет</span>
+          </label>
+        </div>
+        <div style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:-4px; color:var(--muted2); font-size:12px; font-weight:800;">
+          <span>Можно уменьшить вручную или исключить сотрудника.</span>
+          <span class="take-preview">К выдаче: ${initial}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.employeeRows.querySelectorAll('.employee-row').forEach(row => {
+    const quotaInput = row.querySelector('.quota-input');
+    const exclude = row.querySelector('.exclude-check');
+
+    const sync = () => {
+      syncEmployeeCapUI();
+      renderSummary('analysis');
+    };
+
+    quotaInput.addEventListener('input', sync);
+    exclude.addEventListener('change', sync);
+  });
+
+  syncEmployeeCapUI();
+}
+
+function readEmployeePlan(){
+  const cap = getGlobalCap();
+  const cards = [...document.querySelectorAll('.employee-row')];
+
+  return cards.map(card => {
+    const employee = card.dataset.employee;
+    const found = Number(card.dataset.found || 0);
+    const quotaInput = card.querySelector('.quota-input');
+    const exclude = card.querySelector('.exclude-check');
+
+    let quota = exclude.checked ? 0 : Number(quotaInput.value || 0);
+    if (!Number.isFinite(quota) || quota < 0) quota = 0;
+    quota = Math.min(quota, found, cap);
+
+    return { employee, found, quota, exclude: exclude.checked };
+  });
 }
 
 function getSelectedSegmentsText(){
-  if (!state.segmentEnabled) return 'не учитывать сегменты';
   if (!state.selectedSegments.size) return 'ничего не выбрано';
   const arr = [...state.selectedSegments];
   const shown = arr.slice(0, 8).map(escapeHtml).join(', ');
@@ -1422,20 +1437,23 @@ function getPrioritySummaryText(){
 function getEmployeeSummaryText(stage){
   if (!state.employeeOrder.length) return 'сначала посчитайте отбор';
 
+  const cap = getGlobalCap();
+  const plan = readEmployeePlan();
+  const plannedMap = new Map(plan.map(x => [x.employee, x.quota]));
+
   if (stage === 'final' && state.finalRows.length) {
     const countByEmp = groupCount(state.finalRows, state.fields.employee);
     return state.employeeOrder.map(name => {
       const selected = countByEmp.get(name) || 0;
-      const card = [...document.querySelectorAll('.employee-card')].find(x => x.dataset.employee === name);
-      const quota = card ? Number(card.querySelector('.quota-input').value || 0) : 0;
-      return `${escapeHtml(name)} — ${selected} из ${quota}`;
+      const requested = plannedMap.get(name) || 0;
+      return `${escapeHtml(name)} — ${selected} из ${requested} (потолок ${cap})`;
     }).join('<br>');
   }
 
   const countByEmp = groupCount(state.candidateRows, state.fields.employee);
   return state.employeeOrder.map(name => {
     const found = countByEmp.get(name) || 0;
-    return `${escapeHtml(name)} — найдено ${found}`;
+    return `${escapeHtml(name)} — найдено ${found}, потолок ${cap}`;
   }).join('<br>');
 }
 
@@ -1448,123 +1466,91 @@ function groupCount(rows, col){
   return map;
 }
 
-function buildEmployeePanel(){
-  const employeeField = state.fields.employee;
-  if (!employeeField || !state.columns.includes(employeeField)) {
-    el.employeePanel.innerHTML = `<div class="seg-empty">Выберите поле сотрудника в шаге 1.</div>`;
-    return;
-  }
+function renderSummary(stage){
+  const loaded = state.rawData.length;
+  const candidate = state.candidateRows.length;
+  const final = state.finalRows.length;
+  const employees = state.employeeOrder.length;
 
-  const groups = new Map();
-  for (const row of state.candidateRows) {
-    const name = normalizeText(row[employeeField]) || 'Без сотрудника';
-    if (!groups.has(name)) groups.set(name, []);
-    groups.get(name).push(row);
-  }
-
-  const order = [...groups.entries()]
-    .map(([name, rows]) => ({ name, rows, count: rows.length }))
-    .sort((a,b) => a.name.localeCompare(b.name, 'ru'));
-
-  state.employeeGroups = Object.fromEntries(order.map(x => [x.name, x.rows]));
-  state.employeeOrder = order.map(x => x.name);
-
-  if (!order.length) {
-    el.employeePanel.innerHTML = `<div class="seg-empty">После расчёта здесь появятся сотрудники и найденные по ним записи.</div>`;
-    return;
-  }
-
-  el.employeePanel.innerHTML = order.map(({ name, count }) => `
-    <div class="employee-card" data-employee="${escapeHtml(name)}" data-found="${count}">
-      <div class="employee-top">
-        <div>
-          <div class="employee-name">${escapeHtml(name)}</div>
-          <div class="employee-meta">Найдено: ${new Intl.NumberFormat('ru-RU').format(count)} записей</div>
-        </div>
-        <label class="employee-check"><input class="exclude-check" type="checkbox"> Исключить</label>
-      </div>
-      <div class="employee-inputs">
-        <div>
-          <label class="label" style="margin-bottom:6px;">Сколько взять</label>
-          <input class="quota-input" type="number" min="0" max="${count}" value="${count}" />
-        </div>
-        <div>
-          <label class="label" style="margin-bottom:6px;">Лимит</label>
-          <div class="tiny-toggle" style="min-height:46px; justify-content:center;">
-            <span class="quota-preview">${count}</span>
-          </div>
-        </div>
-      </div>
-      <div class="employee-footer">
-        <span>Можно уменьшить вручную или выключить сотрудника.</span>
-        <span class="take-preview">К выдаче: ${count}</span>
-      </div>
+  el.summaryPanel.innerHTML = `
+    <div class="summary-card">
+      <div class="k">Загрузка</div>
+      <div class="v">${loaded ? new Intl.NumberFormat('ru-RU').format(loaded) : '—'}</div>
+      <div class="s">строк в базе</div>
     </div>
-  `).join('');
+    <div class="summary-card">
+      <div class="k">Подошло</div>
+      <div class="v">${candidate ? new Intl.NumberFormat('ru-RU').format(candidate) : '—'}</div>
+      <div class="s">после сегментов и условий</div>
+    </div>
+    <div class="summary-card">
+      <div class="k">Выгрузка</div>
+      <div class="v">${final ? new Intl.NumberFormat('ru-RU').format(final) : '—'}</div>
+      <div class="s">финальных номеров</div>
+    </div>
+    <div class="summary-card">
+      <div class="k">Сотрудники</div>
+      <div class="v">${employees ? employees : '—'}</div>
+      <div class="s">по текущему пулу</div>
+    </div>
+  `;
 
-  el.employeePanel.querySelectorAll('.employee-card').forEach(card => {
-    const found = Number(card.dataset.found || 0);
-    const quotaInput = card.querySelector('.quota-input');
-    const exclude = card.querySelector('.exclude-check');
-    const quotaPreview = card.querySelector('.quota-preview');
-    const takePreview = card.querySelector('.take-preview');
+  const segSummary = getSelectedSegmentsText();
+  const filterSummary = getFilterSummaryText();
+  const prioritySummary = getPrioritySummaryText();
+  const empSummary = getEmployeeSummaryText(stage);
 
-    const sync = () => {
-      if (exclude.checked) {
-        quotaInput.value = 0;
-        quotaInput.disabled = true;
-      } else {
-        quotaInput.disabled = false;
-        let q = Math.max(0, Number(quotaInput.value || 0));
-        if (q > found) q = found;
-        quotaInput.value = q;
-      }
-      const q = Number(quotaInput.value || 0);
-      quotaPreview.textContent = String(q);
-      takePreview.textContent = `К выдаче: ${exclude.checked ? 0 : q}`;
-    };
-
-    quotaInput.addEventListener('input', sync);
-    exclude.addEventListener('change', sync);
-    sync();
-  });
+  el.summaryLines.innerHTML = `
+    <div class="summary-line"><b>Сегменты:</b> ${segSummary}</div>
+    <div class="summary-line"><b>Условия:</b> ${filterSummary}</div>
+    <div class="summary-line"><b>Приоритет:</b> ${prioritySummary}</div>
+    <div class="summary-line"><b>По сотрудникам:</b><br>${empSummary}</div>
+  `;
 }
 
-function readEmployeePlan(){
-  const cards = [...document.querySelectorAll('.employee-card')];
-  return cards.map(card => {
-    const employee = card.dataset.employee;
-    const found = Number(card.dataset.found || 0);
-    const quotaInput = card.querySelector('.quota-input');
-    const exclude = card.querySelector('.exclude-check');
+function renderPreview(rows, mode){
+  if (!rows || !rows.length) {
+    el.previewWrap.innerHTML = `<div style="padding:16px; color:var(--muted2); font-weight:700;">Пока нет результата.</div>`;
+    return;
+  }
 
-    let quota = exclude.checked ? 0 : Number(quotaInput.value || 0);
-    if (!Number.isFinite(quota) || quota < 0) quota = 0;
-    if (quota > found) quota = found;
+  const baseColumns = state.columns;
+  const columns = mode === 'final' ? [...baseColumns, 'Причина отбора'] : baseColumns;
 
-    return { employee, found, quota, exclude: exclude.checked };
-  });
+  let html = `<table><thead><tr>${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
+
+  const previewRows = rows.slice(0, 50);
+  for (const row of previewRows) {
+    html += '<tr>';
+    for (const col of baseColumns) {
+      html += `<td>${escapeHtml(formatForDisplay(row[col], col))}</td>`;
+    }
+    if (mode === 'final') {
+      html += `<td>${escapeHtml(row.__why || '')}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  el.previewWrap.innerHTML = html;
 }
 
 function analyze(){
   if (!state.loaded) return;
 
-  state.segmentEnabled = el.useSegments.checked;
-  state.fields.segment = el.segmentField.value;
-  state.fields.employee = el.employeeField.value;
-  state.fields.phone = el.phoneField.value;
+  if (!state.selectedSegments.size) {
+    setStatus('Выберите хотя бы один сегмент или нажмите «Выбрать все».', 'warn');
+    return;
+  }
 
   const filters = readFiltersFromUI();
-  const segmentSet = state.segmentEnabled ? new Set([...state.selectedSegments]) : null;
+  const segField = state.fields.segment;
+  const segSet = new Set([...state.selectedSegments]);
 
   const candidates = [];
-  const rows = state.rawData;
-
-  for (const row of rows) {
-    if (state.segmentEnabled) {
-      const seg = normalizeText(row[state.fields.segment]) || 'Без анкеты';
-      if (segmentSet && segmentSet.size && !segmentSet.has(seg)) continue;
-    }
+  for (const row of state.rawData) {
+    const seg = normalizeText(row[segField]) || 'Без анкеты';
+    if (!segSet.has(seg)) continue;
 
     let ok = true;
     for (const f of filters) {
@@ -1588,7 +1574,7 @@ function analyze(){
   el.btnBuildFinal.disabled = false;
   el.btnExport.disabled = true;
 
-  setStatus(`Отбор посчитан. Подошло ${new Intl.NumberFormat('ru-RU').format(candidates.length)} строк. Теперь можно задать лимиты по сотрудникам.`, 'good');
+  setStatus(`Отбор посчитан. Подошло ${new Intl.NumberFormat('ru-RU').format(candidates.length)} строк. Теперь можно задать квоты.`, 'good');
 }
 
 function buildFinal(){
@@ -1609,13 +1595,9 @@ function buildFinal(){
   }
 
   const final = [];
-  const selectedByEmp = new Map();
 
   for (const item of plan) {
-    if (item.exclude || item.quota <= 0) {
-      selectedByEmp.set(item.employee, 0);
-      continue;
-    }
+    if (item.exclude || item.quota <= 0) continue;
 
     const group = groups.get(item.employee) || [];
     const sorted = [...group].sort((a,b) => compareRowsByPriority(a,b,rules));
@@ -1626,7 +1608,6 @@ function buildFinal(){
     });
 
     final.push(...picked);
-    selectedByEmp.set(item.employee, picked.length);
   }
 
   state.finalRows = final;
@@ -1638,33 +1619,6 @@ function buildFinal(){
   setStatus(`Итог собран. В выгрузке ${new Intl.NumberFormat('ru-RU').format(final.length)} номеров.`, 'good');
 }
 
-function renderPreview(rows, mode){
-  if (!rows || !rows.length) {
-    el.previewWrap.innerHTML = `<div style="padding:16px; color:var(--muted2); font-weight:700;">Пока нет результата.</div>`;
-    return;
-  }
-
-  const baseColumns = state.columns.filter(c => !String(c).startsWith('__'));
-  const columns = mode === 'final' ? [...baseColumns, 'Причина отбора'] : baseColumns;
-
-  let html = `<table><thead><tr>${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
-
-  const previewRows = rows.slice(0, 50);
-  for (const row of previewRows) {
-    html += '<tr>';
-    for (const col of baseColumns) {
-      html += `<td>${escapeHtml(formatForDisplay(row[col], col))}</td>`;
-    }
-    if (mode === 'final') {
-      html += `<td>${escapeHtml(row.__why || '')}</td>`;
-    }
-    html += '</tr>';
-  }
-
-  html += '</tbody></table>';
-  el.previewWrap.innerHTML = html;
-}
-
 function exportPhones(){
   if (!state.finalRows.length) {
     setStatus('Сначала собери итог.', 'warn');
@@ -1673,7 +1627,7 @@ function exportPhones(){
 
   const phoneField = state.fields.phone;
   if (!phoneField || !state.columns.includes(phoneField)) {
-    setStatus('Поле телефона не выбрано.', 'bad');
+    setStatus('Поле телефона не найдено.', 'bad');
     return;
   }
 
@@ -1705,7 +1659,9 @@ function applyDefaultsAfterLoad(){
   el.btnAnalyze.disabled = false;
   el.btnBuildFinal.disabled = true;
   el.btnExport.disabled = true;
-  setStatus('Файл загружен. Выберите сегменты, условия и приоритеты, затем нажмите «Посчитать отбор».', 'good');
+  buildEmployeePanel();
+  renderSummary('analysis');
+  renderPreview([], 'candidate');
 }
 
 function loadFile(file){
@@ -1717,11 +1673,9 @@ function loadFile(file){
       const isCsv = /\.csv$/i.test(file.name);
 
       if (isCsv) {
-        const text = evt.target.result;
-        workbook = XLSX.read(text, { type: 'string' });
+        workbook = XLSX.read(evt.target.result, { type: 'string' });
       } else {
-        const buffer = evt.target.result;
-        workbook = XLSX.read(buffer, { type: 'array' });
+        workbook = XLSX.read(evt.target.result, { type: 'array' });
       }
 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1733,23 +1687,40 @@ function loadFile(file){
       state.columns = Object.keys(rows[0] || {}).filter(c => c !== '__idx');
       rebuildColumnTypes();
 
-      state.fields.segment = detectFieldByName(state.columns, ['сегмент']);
-      state.fields.employee = detectFieldByName(state.columns, ['сотрудник', 'менеджер', 'employee']);
-      state.fields.phone = detectFieldByName(state.columns, ['тел', 'phone', 'mobile']);
+      const seg = findFixedColumn(FIXED_FIELDS.segment);
+      const emp = findFixedColumn(FIXED_FIELDS.employee);
+      const phone = findFixedColumn(FIXED_FIELDS.phone);
 
-      renderFieldSelectors();
+      if (!seg || !emp || !phone) {
+        state.loaded = false;
+        el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
+        el.fieldInfo.textContent = 'Не найдены обязательные поля';
+        setStatus('В файле должны быть столбцы: Категория, Сотрудник, Телефон.', 'bad');
+        el.btnAnalyze.disabled = true;
+        el.btnBuildFinal.disabled = true;
+        el.btnExport.disabled = true;
+        return;
+      }
+
+      state.fields.segment = seg;
+      state.fields.employee = emp;
+      state.fields.phone = phone;
+
+      el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
+      el.fieldInfo.textContent = `Категория • Сотрудник • Телефон`;
+      state.loaded = true;
+
       buildSegmentsPanel();
       applyDefaultsAfterLoad();
 
-      el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
-      state.loaded = true;
+      setStatus(`Файл загружен. Найдено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}.`, 'good');
     } catch (err) {
       console.error(err);
       setStatus(`Ошибка загрузки: ${err.message}`, 'bad');
     }
   };
 
-  if (/\.csv$/i.test(file.name)) reader.readAsText(file, 'utf-8');
+  if (isCsv) reader.readAsText(file, 'utf-8');
   else reader.readAsArrayBuffer(file);
 }
 
@@ -1760,77 +1731,32 @@ function wireUp(){
     loadFile(file);
   });
 
-  el.segmentField.addEventListener('change', () => {
-    state.fields.segment = el.segmentField.value;
-    buildSegmentsPanel();
-  });
+  el.btnAllSegments.addEventListener('click', () => toggleSegments(true));
+  el.btnClearSegments.addEventListener('click', () => toggleSegments(false));
 
-  el.employeeField.addEventListener('change', () => {
-    state.fields.employee = el.employeeField.value;
-  });
-
-  el.phoneField.addEventListener('change', () => {
-    state.fields.phone = el.phoneField.value;
-  });
-
-  el.useSegments.addEventListener('change', () => {
-    state.segmentEnabled = el.useSegments.checked;
-  });
-
-  el.btnAllSegments.addEventListener('click', () => {
-    toggleSegments(true);
-  });
-
-  el.btnClearSegments.addEventListener('click', () => {
-    toggleSegments(false);
-  });
-
-  el.btnAddFilter.addEventListener('click', () => {
-    addFilterRow();
-  });
-
+  el.btnAddFilter.addEventListener('click', () => addFilterRow());
   el.btnClearFilters.addEventListener('click', () => {
     clearFilterRows();
     addFilterRow();
   });
 
-  el.btnAddPriority.addEventListener('click', () => {
-    addPriorityRow();
-  });
+  el.btnAddPriority.addEventListener('click', () => addPriorityRow());
+  el.btnDefaultPriority.addEventListener('click', () => setDefaultPriorityRows());
 
-  el.btnDefaultPriority.addEventListener('click', () => {
-    setDefaultPriorityRows();
-  });
-
-  el.btnAnalyze.addEventListener('click', () => {
-    analyze();
-  });
-
-  el.btnBuildFinal.addEventListener('click', () => {
-    buildFinal();
-  });
-
-  el.btnExport.addEventListener('click', () => {
-    exportPhones();
-  });
+  el.btnAnalyze.addEventListener('click', analyze);
+  el.btnBuildFinal.addEventListener('click', buildFinal);
+  el.btnExport.addEventListener('click', exportPhones);
 
   el.btnLoadDemo.addEventListener('click', () => {
-    const text = [
-      'Сначала загрузка базы',
-      'Потом сегменты только из этой базы',
-      'Потом гибкие условия по любому столбцу',
-      'Потом приоритет отбора внутри сотрудника',
-      'Потом квоты и исключения',
-      'Потом выгрузка телефонов'
-    ].join(' • ');
-    setStatus(text, 'good');
+    setStatus('1) загрузили файл → 2) выбрали сегменты → 3) задали условия → 4) настроили приоритет → 5) задали квоты → 6) выгрузили телефоны.', 'good');
   });
-}
 
-function buildInitialUI(){
-  clearFilterRows();
-  addFilterRow();
-  setDefaultPriorityRows();
+  el.globalCap.addEventListener('input', () => {
+    if (state.candidateRows.length) {
+      syncEmployeeCapUI();
+      renderSummary(state.finalRows.length ? 'final' : 'analysis');
+    }
+  });
 }
 
 function clearAllState(){
@@ -1838,15 +1764,13 @@ function clearAllState(){
   state.finalRows = [];
   state.employeeGroups = {};
   state.employeeOrder = [];
-  el.employeePanel.innerHTML = `<div class="seg-empty">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>`;
+  el.employeeRows.innerHTML = `<div class="seg-empty" style="padding:14px;">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>`;
   renderSummary('analysis');
   renderPreview([], 'candidate');
 }
 
 wireUp();
-buildInitialUI();
 renderSummary('analysis');
-
 </script>
 </body>
 </html>
