@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Compas Flow • Campaign Builder</title>
   
+  <!-- FAVICON - добавьте файл logo.png или logo.svg в корень репозитория -->
+  <link rel="icon" type="image/png" href="./logo.png">
+  <link rel="apple-touch-icon" href="./logo.png">
+  
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -119,6 +123,7 @@
       background: transparent; border: none;
       color: var(--text-secondary); padding: 6px 10px;
       font-weight: 600; font-size: 13px;
+      cursor: pointer;
     }
     .btn-ghost:hover { color: var(--text-primary); background: var(--btn-secondary-hover-bg); }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -182,10 +187,12 @@
       flex: 1; padding: 10px 14px; text-align: center;
       font-weight: 700; font-size: 14px; color: var(--text-secondary);
       border-radius: var(--radius-md); cursor: pointer; transition: 0.18s ease;
+      border: none;
+      background: transparent;
     }
     .tab:hover { color: var(--text-primary); background: var(--btn-secondary-hover-bg); }
     .tab.active { background: var(--text-accent); color: white; box-shadow: 0 2px 8px rgba(243,112,33,0.3); }
-    .tab.disabled { opacity: 0.3; pointer-events: none; }
+    .tab.disabled { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
 
     .panel { display: none; animation: fadeUp 0.18s ease; }
     .panel.active { display: block; }
@@ -725,18 +732,29 @@
     else reader.readAsArrayBuffer(file);
   }
 
-  // ===== TABS =====
-  $$('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if (tab.classList.contains('disabled')) return;
-      $$('.tab').forEach(t => t.classList.remove('active'));
-      $$('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      const panelId = `#panel-${tab.dataset.tab}`;
-      const panel = $(panelId);
-      if (panel) panel.classList.add('active');
+  // ===== TABS - ИСПРАВЛЕНО =====
+  function initTabs() {
+    const tabs = $$('.tab');
+    const panels = $$('.panel');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        if (this.classList.contains('disabled')) return;
+        
+        // Remove active from all
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        
+        // Add active to current
+        this.classList.add('active');
+        const tabName = this.getAttribute('data-tab');
+        const panel = document.getElementById(`panel-${tabName}`);
+        if (panel) {
+          panel.classList.add('active');
+        }
+      });
     });
-  });
+  }
 
   // ===== FILTERS =====
   let filterId = 0;
@@ -1021,7 +1039,8 @@
     showToast('Сброшено', 'warning');
   });
 
-  // Init
+  // ===== INIT =====
+  initTabs();
   updateCharts();
 })();
 </script>
