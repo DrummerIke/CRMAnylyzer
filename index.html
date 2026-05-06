@@ -1,167 +1,358 @@
-<script>
-(function() {
-'use strict';
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Analyzer</title>
 
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-const state = {
-  rawData: [],
-  columns: [],
-  segmentField: 'Категория',
-  employeeField: 'Сотрудник',
-  phoneField: '',
-  selectedSegments: new Set(),
-  candidateRows: [],
-  finalRows: [],
-  employees: [],
-  cap: 100
-};
-
-// ===== УЛУЧШЕННЫЙ ПОИСК ПОЛЕЙ =====
-function findPhoneField(cols) {
-  const variants = ['телефон','phone','mobile','моб','тел'];
-  return cols.find(c => {
-    const norm = c.toLowerCase().replace(/\s/g,'');
-    return variants.some(v => norm.includes(v));
-  });
+<style>
+:root {
+  --bg: #382f2c;
+  --card: #282220;
+  --card2: #1f1a19;
+  --accent: #f37021;
+  --text: #fff;
+  --muted: #aaa;
+  --border: rgba(255,255,255,.08);
 }
 
-// ===== PARSE FILE =====
-window.handleFile = function(file) {
+body {
+  margin:0;
+  font-family: Inter, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ===== layout ===== */
+.container {
+  display:grid;
+  grid-template-columns: 1fr 320px;
+  gap:20px;
+  padding:20px;
+}
+
+.card {
+  background: var(--card);
+  border-radius:12px;
+  border:1px solid var(--border);
+  padding:16px;
+}
+
+/* ===== tabs ===== */
+.tabs {
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.tab {
+  flex:1;
+  padding:10px;
+  text-align:center;
+  border-radius:10px;
+  cursor:pointer;
+  background: var(--card2);
+  color: var(--muted);
+}
+
+.tab.active {
+  background: var(--accent);
+  color:#fff;
+}
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* ===== buttons ===== */
+.btn {
+  padding:10px;
+  border-radius:999px;
+  border:1px solid var(--accent);
+  background:transparent;
+  color:white;
+  cursor:pointer;
+}
+
+.btn:hover {
+  background: rgba(243,112,33,.2);
+}
+
+/* ===== segments ===== */
+.segment {
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  margin-bottom:6px;
+  cursor:pointer;
+}
+
+.segment.active {
+  border-color: var(--accent);
+  background: rgba(243,112,33,.1);
+}
+
+/* ===== employees ===== */
+.emp {
+  display:flex;
+  justify-content:space-between;
+  padding:8px;
+  border-bottom:1px solid var(--border);
+}
+
+/* ===== preview ===== */
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+td, th {
+  padding:6px;
+  border-bottom:1px solid var(--border);
+}
+
+/* ===== summary ===== */
+.metric {
+  margin-bottom:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div style="padding:16px;font-weight:700">CRM Analyzer</div>
+
+<div class="container">
+
+<div>
+
+<!-- ===== upload ===== -->
+<div class="card">
+<input type="file" id="fileInput">
+</div>
+
+<!-- ===== tabs ===== -->
+<div class="tabs">
+<div class="tab active" data-tab="segments">Сегменты</div>
+<div class="tab" data-tab="filters">Фильтры</div>
+<div class="tab" data-tab="employees">Сотрудники</div>
+</div>
+
+<!-- ===== segments ===== -->
+<div class="panel active" id="segments">
+<div id="segmentsList"></div>
+</div>
+
+<!-- ===== filters ===== -->
+<div class="panel" id="filters">
+<button class="btn" id="applyFilters">Применить</button>
+</div>
+
+<!-- ===== employees ===== -->
+<div class="panel" id="employees">
+<div id="empList"></div>
+<button class="btn" id="applyEmployees">Собрать</button>
+</div>
+
+</div>
+
+<!-- ===== right side ===== -->
+<div>
+
+<div class="card">
+<div class="metric">Всего: <span id="m1">0</span></div>
+<div class="metric">После сегментов: <span id="m2">0</span></div>
+<div class="metric">После фильтров: <span id="m3">0</span></div>
+<div class="metric">Итог: <span id="m4">0</span></div>
+</div>
+
+<div class="card">
+<table>
+<thead>
+<tr>
+<th>Телефон</th>
+<th>Сегмент</th>
+</tr>
+</thead>
+<tbody id="preview"></tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const state = {
+  data: [],
+  segments: new Set(),
+  filtered: [],
+  final: [],
+  employees: [],
+  phoneField: '',
+};
+
+// ===== utils =====
+function normalizePhone(p) {
+  return String(p).replace(/\D/g,'');
+}
+
+// ===== detect phone =====
+function findPhone(cols) {
+  return cols.find(c =>
+    c.toLowerCase().includes('тел')
+    || c.toLowerCase().includes('phone')
+  );
+}
+
+// ===== tabs =====
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  };
+});
+
+// ===== upload =====
+document.getElementById('fileInput').onchange = e=>{
+  const file = e.target.files[0];
   const reader = new FileReader();
 
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: 'array' });
+  reader.onload = ev=>{
+    const wb = XLSX.read(ev.target.result, {type:'array'});
     const sheet = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const data = XLSX.utils.sheet_to_json(sheet);
 
-    state.rawData = data;
-    state.columns = Object.keys(data[0] || {});
+    state.data = data;
 
-    state.phoneField = findPhoneField(state.columns);
+    const cols = Object.keys(data[0]);
+    state.phoneField = findPhone(cols);
 
-    if (!state.phoneField) {
-      alert('❌ Не найдено поле телефона');
-      return;
-    }
-
-    initAfterLoad();
+    buildSegments();
+    updateSummary();
   };
 
   reader.readAsArrayBuffer(file);
 };
 
-// ===== ПОСЛЕ ЗАГРУЗКИ =====
-function initAfterLoad() {
-  buildSegments();
-
-  // включаем табы
-  $$('.tab').forEach(t => {
-    t.classList.remove('disabled');
-    t.onclick = () => switchTab(t.dataset.tab);
-  });
-}
-
-// ===== ТАБЫ =====
-function switchTab(name) {
-  $$('.tab').forEach(t => t.classList.remove('active'));
-  $$('.panel').forEach(p => p.classList.remove('active'));
-
-  $(`.tab[data-tab="${name}"]`).classList.add('active');
-  $(`#panel-${name}`).classList.add('active');
-}
-
-// ===== СЕГМЕНТЫ =====
+// ===== segments =====
 function buildSegments() {
   const map = new Map();
 
-  state.rawData.forEach(r => {
-    const v = r[state.segmentField] || '—';
-    map.set(v, (map.get(v) || 0) + 1);
+  state.data.forEach(r=>{
+    const s = r['Категория'] || '—';
+    map.set(s, (map.get(s)||0)+1);
   });
 
-  state.selectedSegments = new Set([...map.keys()]);
+  state.segments = new Set(map.keys());
 
-  const sorted = [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ru'));
+  const el = document.getElementById('segmentsList');
+  el.innerHTML = '';
 
-  $('#segmentGroups').innerHTML = sorted.map(([val,count])=>`
-    <div class="segment-item active" data-val="${val}">
-      ${val} (${count})
-    </div>
-  `).join('');
+  map.forEach((count,val)=>{
+    const div = document.createElement('div');
+    div.className = 'segment active';
+    div.innerText = `${val} (${count})`;
 
-  $$('.segment-item').forEach(el=>{
-    el.onclick = ()=>{
-      el.classList.toggle('active');
-      state.selectedSegments.has(el.dataset.val)
-        ? state.selectedSegments.delete(el.dataset.val)
-        : state.selectedSegments.add(el.dataset.val);
+    div.onclick = ()=>{
+      div.classList.toggle('active');
+      if(state.segments.has(val)) state.segments.delete(val);
+      else state.segments.add(val);
+
+      updateSummary();
     };
+
+    el.appendChild(div);
   });
 }
 
-// ===== ФИЛЬТРЫ (ТИПЫ) =====
-function detectType(val) {
-  if (!val) return 'text';
-
-  if (!isNaN(Date.parse(val))) return 'date';
-  if (!isNaN(parseFloat(val))) return 'number';
-
-  return 'text';
-}
-
-function applyFilters() {
-  state.candidateRows = state.rawData.filter(r=>{
-    if (!state.selectedSegments.has(r[state.segmentField])) return false;
-
-    // тут можно расширять условия
-    return true;
-  });
+// ===== filters =====
+document.getElementById('applyFilters').onclick = ()=>{
+  state.filtered = state.data.filter(r =>
+    state.segments.has(r['Категория'])
+  );
 
   buildEmployees();
   updateSummary();
-}
+  preview(state.filtered);
+};
 
-// ===== СОТРУДНИКИ =====
+// ===== employees =====
 function buildEmployees() {
   const map = new Map();
 
-  state.candidateRows.forEach(r=>{
-    const emp = r[state.employeeField] || '—';
-    map.set(emp, (map.get(emp)||0)+1);
+  state.filtered.forEach(r=>{
+    const e = r['Сотрудник'] || '—';
+    map.set(e, (map.get(e)||0)+1);
   });
 
   state.employees = [...map.entries()].map(([name,count])=>({
     name,
-    found: count,
-    quota: Math.min(count, state.cap),
-    excluded: false
+    count,
+    take: Math.min(count,100)
   }));
 
-  renderEmployees();
+  const el = document.getElementById('empList');
+  el.innerHTML = '';
+
+  state.employees.forEach((e,i)=>{
+    const div = document.createElement('div');
+    div.className = 'emp';
+
+    div.innerHTML = `
+      <span>${e.name} (${e.count})</span>
+      <input type="number" value="${e.take}" data-i="${i}">
+    `;
+
+    div.querySelector('input').onchange = ev=>{
+      state.employees[i].take = +ev.target.value;
+    };
+
+    el.appendChild(div);
+  });
 }
 
-function renderEmployees() {
-  $('#employeeList').innerHTML = state.employees.map((e,i)=>`
-    <div>
-      ${e.name} — найдено ${e.found}
-      <input type="number" value="${e.quota}" data-i="${i}">
-    </div>
+// ===== apply employees =====
+document.getElementById('applyEmployees').onclick = ()=>{
+  state.final = [];
+
+  state.employees.forEach(emp=>{
+    const rows = state.filtered.filter(r=>r['Сотрудник']===emp.name);
+    state.final.push(...rows.slice(0, emp.take));
+  });
+
+  updateSummary();
+  preview(state.final);
+};
+
+// ===== preview =====
+function preview(rows) {
+  const el = document.getElementById('preview');
+
+  el.innerHTML = rows.slice(0,30).map(r=>`
+    <tr>
+      <td>${normalizePhone(r[state.phoneField])}</td>
+      <td>${r['Категория']}</td>
+    </tr>
   `).join('');
 }
 
-// ===== SUMMARY =====
+// ===== summary =====
 function updateSummary() {
-  $('#metricTotal').textContent = state.rawData.length;
-  $('#metricSegments').textContent = state.selectedSegments.size;
-  $('#metricFilters').textContent = state.candidateRows.length;
+  document.getElementById('m1').innerText = state.data.length;
+  document.getElementById('m2').innerText =
+    state.data.filter(r=>state.segments.has(r['Категория'])).length;
+  document.getElementById('m3').innerText = state.filtered.length;
+  document.getElementById('m4').innerText = state.final.length;
 }
 
-// ===== INIT =====
-$('#fileInput').onchange = e=>{
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-};
-
-})();
 </script>
+
+</body>
+</html>
