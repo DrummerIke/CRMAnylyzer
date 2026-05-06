@@ -1,1058 +1,167 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Compas Flow • Campaign Builder</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <style>
-    /* ===== CLEANED BORK-DARK THEME ===== */
-    :root {
-      --bg-pulse: #382f2c;
-      --bg-card: #282220;
-      --bg-card-accent: #1f1a19;
-      --bg-input: #1f1a19;
-      --bg-dropdown: #181514;
-      --border-default: rgba(255,255,255,0.08);
-      --border-focus: #f37021;
-      --text-primary: #ffffff;
-      --text-secondary: #aaaaaa;
-      --text-muted: #876f67;
-      --text-accent: #f37021;
-      --text-error: #f54b4b;
-      --text-on-accent: #ffffff;
-      
-      --btn-primary-bg: transparent;
-      --btn-primary-border: #f37021;
-      --btn-primary-text: #fff;
-      --btn-primary-hover-bg: rgba(243, 112, 33, 0.3);
-      
-      --btn-secondary-bg: transparent;
-      --btn-secondary-border: #746762;
-      --btn-secondary-text: #fff;
-      --btn-secondary-hover-bg: rgba(255,255,255,0.1);
-      
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-full: 999px;
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
-      
-      --font-main: 'Inter', system-ui, sans-serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      font-family: var(--font-main);
-      font-size: 15px;
-      line-height: 1.45;
-      color: var(--text-primary);
-      background: var(--bg-pulse);
-      min-height: 100vh;
-      overflow-x: hidden;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .gap-4 { gap: 16px; }
-    .p-3 { padding: 12px; }
-    .p-4 { padding: 16px; }
-    .p-6 { padding: 24px; }
-    .rounded { border-radius: var(--radius-md); }
-    .rounded-lg { border-radius: var(--radius-lg); }
-    .rounded-full { border-radius: var(--radius-full); }
-    .text-xs { font-size: 12px; font-weight: 600; }
-    .text-sm { font-size: 14px; }
-    .text-lg { font-size: 18px; font-weight: 600; }
-    .text-xl { font-size: 22px; font-weight: 700; }
-    .text-muted { color: var(--text-muted); }
-    .text-secondary { color: var(--text-secondary); }
-    .font-medium { font-weight: 500; }
-    .font-semibold { font-weight: 600; }
-    .font-bold { font-weight: 700; }
-    .w-full { width: 100%; }
-    .hidden { display: none !important; }
-
-    /* ===== HEADER ===== */
-    .header {
-      position: sticky; top: 0; z-index: 50;
-      height: 56px;
-      background: rgba(56,47,44,0.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border-default);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 800; font-size: 18px;
-    }
-    .logo-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--text-accent);
-      box-shadow: 0 0 0 4px rgba(243,112,33,0.2);
-    }
-
-    /* ===== BUTTONS ===== */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 8px; padding: 10px 18px;
-      font-family: inherit; font-size: 14px; font-weight: 700;
-      color: var(--btn-primary-text);
-      background: var(--btn-primary-bg);
-      border: 1px solid var(--btn-primary-border);
-      border-radius: var(--radius-full);
-      cursor: pointer; transition: all 0.18s ease;
-    }
-    .btn:hover { background: var(--btn-primary-hover-bg); }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .btn-secondary {
-      background: var(--btn-secondary-bg);
-      border: 1px solid var(--btn-secondary-border);
-      color: var(--btn-secondary-text);
-    }
-    .btn-secondary:hover { background: var(--btn-secondary-hover-bg); border-color: var(--btn-secondary-border); }
-
-    .btn-ghost {
-      background: transparent; border: none;
-      color: var(--text-secondary); padding: 6px 10px;
-      font-weight: 600; font-size: 13px;
-    }
-    .btn-ghost:hover { color: var(--text-primary); background: var(--btn-secondary-hover-bg); }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-
-    /* ===== INPUTS ===== */
-    .input, .select {
-      width: 100%; padding: 10px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      color: var(--text-primary);
-      font: inherit; transition: 0.18s ease;
-    }
-    .input:focus, .select:focus {
-      outline: none; border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(243,112,33,0.2);
-    }
-    .input::placeholder { color: var(--text-muted); }
-
-    /* ===== METRICS ===== */
-    .live-metrics {
-      display: flex; gap: 12px; padding: 12px 24px;
-      background: linear-gradient(90deg, rgba(243,112,33,0.08), transparent);
-      border-bottom: 1px solid var(--border-default);
-      overflow-x: auto;
-    }
-    .metric {
-      display: flex; flex-direction: column; align-items: center;
-      min-width: 110px; padding: 10px 14px;
-      border-radius: var(--radius-md);
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border-default);
-    }
-    .metric-label {
-      font-size: 11px; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
-    }
-    .metric-value { font-size: 20px; font-weight: 800; }
-
-    /* ===== MAIN LAYOUT ===== */
-    .main {
-      display: grid; grid-template-columns: 1fr 380px;
-      gap: 20px; padding: 20px 24px; max-width: 1440px; margin: 0 auto;
-    }
-    @media (max-width: 1100px) { .main { grid-template-columns: 1fr; } }
-
-    /* ===== UPLOAD ===== */
-    .upload-section {
-      padding: 24px; background: var(--bg-card);
-      border: 2px dashed var(--border-default); border-radius: var(--radius-lg);
-      text-align: center; margin-bottom: 16px; cursor: pointer; transition: 0.18s ease;
-    }
-    .upload-section:hover, .upload-section.dragover {
-      border-color: var(--text-accent); background: rgba(243,112,33,0.05);
-    }
-    .upload-section.loaded { border-style: solid; border-color: #22c55e; background: rgba(34,197,94,0.08); }
-    .upload-icon { font-size: 32px; margin-bottom: 8px; }
-
-    /* ===== TABS & PANELS ===== */
-    .tabs {
-      display: flex; gap: 6px; padding: 4px;
-      background: rgba(255,255,255,0.04); border-radius: var(--radius-lg);
-      border: 1px solid var(--border-default);
-    }
-    .tab {
-      flex: 1; padding: 10px 14px; text-align: center;
-      font-weight: 700; font-size: 14px; color: var(--text-secondary);
-      border-radius: var(--radius-md); cursor: pointer; transition: 0.18s ease;
-    }
-    .tab:hover { color: var(--text-primary); background: var(--btn-secondary-hover-bg); }
-    .tab.active { background: var(--text-accent); color: var(--text-on-accent); box-shadow: 0 2px 8px rgba(243,112,33,0.3); }
-    .tab.disabled { opacity: 0.3; pointer-events: none; }
-
-    .panel { display: none; animation: fadeUp 0.18s ease; }
-    .panel.active { display: block; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ===== CARDS ===== */
-    .card {
-      background: var(--bg-card); border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
-    }
-    .card-header {
-      padding: 16px 20px; border-bottom: 1px solid var(--border-default);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .card-title { display: flex; align-items: center; gap: 10px; }
-    .card-icon {
-      width: 28px; height: 28px; border-radius: 8px;
-      display: grid; place-items: center;
-      background: rgba(243,112,33,0.15); color: var(--text-accent);
-      font-weight: 800; font-size: 13px;
-    }
-    .card-body { padding: 20px; }
-
-    /* ===== SEGMENTS ===== */
-    .segment-search { position: relative; margin-bottom: 16px; }
-    .segment-search input { padding-left: 36px; }
-    .segment-search-icon {
-      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-      color: var(--text-muted); pointer-events: none;
-    }
-    .segment-group { margin-bottom: 20px; }
-    .segment-group-header {
-      display: flex; justify-content: space-between; padding: 6px 4px; margin-bottom: 10px;
-    }
-    .segment-group-title { font-weight: 700; font-size: 14px; }
-    .segment-group-count {
-      font-size: 12px; color: var(--text-muted);
-      background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: var(--radius-full);
-    }
-    .segment-list { display: grid; gap: 6px; }
-    .segment-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: var(--radius-md);
-      background: rgba(255,255,255,0.02); border: 1px solid var(--border-default);
-      cursor: pointer; transition: 0.18s ease;
-    }
-    .segment-item:hover { border-color: var(--text-accent); background: rgba(243,112,33,0.05); }
-    .segment-item.active { background: rgba(243,112,33,0.12); border-color: var(--text-accent); }
-    .segment-checkbox {
-      width: 18px; height: 18px; border-radius: 4px;
-      border: 2px solid rgba(255,255,255,0.2);
-      display: grid; place-items: center; flex-shrink: 0;
-    }
-    .segment-item.active .segment-checkbox { background: var(--text-accent); border-color: var(--text-accent); }
-    .segment-checkbox svg { width: 12px; height: 12px; color: white; opacity: 0; }
-    .segment-item.active .segment-checkbox svg { opacity: 1; }
-    .segment-name { flex: 1; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .segment-count {
-      font-size: 12px; color: var(--text-muted); font-weight: 700;
-      padding: 2px 8px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);
-    }
-
-    /* ===== FILTERS ===== */
-    .filter-rule {
-      background: rgba(255,255,255,0.02); border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px;
-    }
-    .filter-rule-header {
-      display: flex; justify-content: space-between; margin-bottom: 14px; gap: 12px;
-    }
-    .filter-rule-number {
-      width: 24px; height: 24px; border-radius: 6px;
-      background: rgba(243,112,33,0.15); color: var(--text-accent);
-      display: grid; place-items: center; font-weight: 800; font-size: 12px;
-    }
-    .filter-fields {
-      display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 10px; align-items: end;
-    }
-    @media (max-width: 768px) { .filter-fields { grid-template-columns: 1fr; } }
-    .filter-field-label {
-      display: block; font-size: 11px; color: var(--text-muted);
-      font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-
-    /* ===== APPLY BAR ===== */
-    .apply-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px; background: rgba(243,112,33,0.08);
-      border: 1px solid rgba(243,112,33,0.3);
-      border-radius: var(--radius-md); margin-top: 16px;
-    }
-    .apply-bar-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
-
-    /* ===== PRIORITY ===== */
-    .priority-list { display: flex; flex-direction: column; gap: 10px; }
-    .priority-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border-default); border-radius: var(--radius-md);
-      cursor: grab; transition: 0.18s ease;
-    }
-    .priority-item.dragging { opacity: 0.8; transform: scale(1.02); box-shadow: var(--shadow-md); z-index: 10; }
-    .priority-drag { color: var(--text-muted); cursor: grab; font-size: 18px; }
-    .priority-field { flex: 1; font-weight: 600; }
-    .priority-direction {
-      padding: 6px 10px; background: rgba(255,255,255,0.05);
-      border-radius: var(--radius-full); font-size: 12px; font-weight: 700;
-      cursor: pointer; transition: 0.18s ease;
-    }
-    .priority-direction:hover { background: var(--text-accent); color: var(--text-on-accent); }
-
-    /* ===== EMPLOYEES ===== */
-    .employee-controls {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px; gap: 16px; flex-wrap: wrap;
-    }
-    .cap-slider-wrap { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px; }
-    .cap-slider {
-      flex: 1; height: 6px; -webkit-appearance: none; appearance: none;
-      background: rgba(255,255,255,0.1); border-radius: 99px; outline: none;
-    }
-    .cap-slider::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
-      background: var(--text-accent); cursor: pointer; border: 3px solid white;
-    }
-    .cap-value { font-weight: 800; font-size: 18px; min-width: 48px; text-align: center; }
-    .employee-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .employee-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding-right: 4px; }
-    .employee-list::-webkit-scrollbar { width: 6px; }
-    .employee-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-    .employee-list::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
-
-    .employee-item {
-      display: grid; grid-template-columns: 1fr auto auto auto;
-      gap: 12px; align-items: center; padding: 12px 14px;
-      background: rgba(255,255,255,0.02); border: 1px solid var(--border-default);
-      border-radius: var(--radius-md); transition: 0.18s ease;
-    }
-    .employee-item:hover { border-color: var(--text-accent); }
-    .employee-info { min-width: 0; }
-    .employee-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .employee-found { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-    .employee-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; margin-top: 6px; }
-    .employee-bar-fill { height: 100%; background: linear-gradient(90deg, var(--text-accent), #d95c22); border-radius: 99px; transition: width 0.18s ease; }
-    .employee-quota input {
-      width: 64px; text-align: center; padding: 6px 8px; font-weight: 700;
-      background: var(--bg-input); border: 1px solid var(--border-default);
-      border-radius: 8px; color: var(--text-primary); font: inherit;
-    }
-    .employee-quota input:focus { outline: none; border-color: var(--border-focus); }
-    .employee-exclude {
-      width: 32px; height: 32px; border-radius: var(--radius-md);
-      display: grid; place-items: center; cursor: pointer;
-      color: var(--text-muted); transition: 0.18s ease;
-      border: 1px solid var(--border-default); background: transparent;
-    }
-    .employee-exclude:hover, .employee-exclude.active {
-      color: var(--text-error); background: rgba(245,75,75,0.1); border-color: var(--text-error);
-    }
-
-    /* ===== PREVIEW & CHARTS ===== */
-    .preview-panel { position: sticky; top: 76px; align-self: start; display: flex; flex-direction: column; gap: 16px; }
-    .chart-card { padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-default); border-radius: var(--radius-lg); }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .chart-title { font-weight: 700; font-size: 14px; }
-    .chart-wrap { height: 180px; position: relative; }
-
-    .preview-table-wrap {
-      border: 1px solid var(--border-default); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-      background: rgba(255,255,255,0.02); max-height: 300px; overflow: auto;
-    }
-    .preview-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .preview-table th {
-      position: sticky; top: 0; background: var(--bg-card-accent);
-      padding: 10px 12px; text-align: left; font-weight: 700; font-size: 11px;
-      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;
-      border-bottom: 1px solid var(--border-default); z-index: 1;
-    }
-    .preview-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-    .preview-table tr:hover { background: rgba(255,255,255,0.03); }
-
-    /* ===== EXPORT ===== */
-    .export-checklist { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-    .export-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-      background: rgba(255,255,255,0.02); border: 1px solid var(--border-default); border-radius: var(--radius-md);
-    }
-    .export-check {
-      width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--border-default);
-      display: grid; place-items: center; flex-shrink: 0;
-    }
-    .export-check.checked { background: #22c55e; border-color: #22c55e; }
-    .export-check svg { width: 14px; height: 14px; color: white; opacity: 0; }
-    .export-check.checked svg { opacity: 1; }
-    .export-label { flex: 1; font-weight: 500; }
-    .export-value { font-weight: 700; color: #22c55e; }
-
-    /* ===== TOAST ===== */
-    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 10px; max-width: 360px; }
-    .toast {
-      padding: 12px 16px; background: var(--bg-card-accent); border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
-      display: flex; align-items: center; gap: 10px; animation: slideIn 0.2s ease;
-    }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-    .toast.success { border-left: 4px solid #22c55e; }
-    .toast.warning { border-left: 4px solid #f59e0b; }
-    .toast.error { border-left: 4px solid #ef4444; }
-    .toast-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-    .toast.success .toast-icon { background: rgba(34,197,94,0.2); color: #22c55e; }
-    .toast.warning .toast-icon { background: rgba(245,158,11,0.2); color: #f59e0b; }
-    .toast.error .toast-icon { background: rgba(239,68,68,0.2); color: #ef4444; }
-    .toast-message { flex: 1; font-size: 14px; font-weight: 500; }
-
-    /* ===== LOADING ===== */
-    .loading-overlay {
-      position: fixed; inset: 0; background: rgba(15,10,9,0.85); backdrop-filter: blur(4px);
-      display: none; align-items: center; justify-content: center; z-index: 200;
-    }
-    .loading-overlay.active { display: flex; }
-    .loading-content { text-align: center; padding: 24px 32px; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-default); }
-    .loading-spinner { width: 32px; height: 32px; border: 3px solid var(--border-default); border-top-color: var(--text-accent); border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body>
-
-  <header class="header">
-    <div class="logo"><span class="logo-dot"></span><span>Compas Flow</span></div>
-    <div class="flex items-center gap-3">
-      <button class="btn-ghost" id="btnReset">↺ Сбросить</button>
-      <button class="btn-ghost" id="btnSave">💾 Сохранить</button>
-      <button class="btn" id="btnExportTop" disabled>Экспорт</button>
-    </div>
-  </header>
-
-  <div class="live-metrics" id="liveMetrics">
-    <div class="metric"><span class="metric-label">Всего в базе</span><span class="metric-value" id="metricTotal">—</span></div>
-    <div class="metric"><span class="metric-label">После сегментов</span><span class="metric-value" id="metricSegments">—</span></div>
-    <div class="metric"><span class="metric-label">После фильтров</span><span class="metric-value" id="metricFilters">—</span></div>
-    <div class="metric"><span class="metric-label">К выгрузке</span><span class="metric-value" id="metricFinal">—</span></div>
-    <div class="metric"><span class="metric-label">Сотрудников</span><span class="metric-value" id="metricEmployees">—</span></div>
-  </div>
-
-  <main class="main">
-    <div class="workspace">
-      <div class="upload-section" id="uploadSection">
-        <input type="file" id="fileInput" accept=".xlsx,.csv" style="display:none" />
-        <div class="upload-icon">📂</div>
-        <div class="upload-text">Перетащите файл сюда или нажмите для выбора</div>
-        <div class="upload-hint text-sm text-muted">Поддерживаются .xlsx и .csv</div>
-      </div>
-      
-      <div class="tabs" role="tablist">
-        <button class="tab active" data-tab="segments" disabled>🎯 Сегменты</button>
-        <button class="tab" data-tab="filters" disabled>🔍 Фильтры</button>
-        <button class="tab" data-tab="priority" disabled>⚡ Приоритет</button>
-        <button class="tab" data-tab="employees" disabled>👥 Сотрудники</button>
-      </div>
-      
-      <div class="panel active" id="panel-segments">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="card-icon">1</div><div><div class="text-lg">Сегменты из файла</div><div class="text-xs text-muted">Только значения, которые есть в выгрузке</div></div></div>
-            <div class="flex gap-2">
-              <button class="btn-secondary btn-sm" id="btnSelectAll" disabled>Выбрать все</button>
-              <button class="btn-ghost btn-sm" id="btnClearAll" disabled>Снять все</button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div id="segmentEmpty" class="text-muted" style="text-align:center;padding:24px;">Загрузите файл, чтобы увидеть сегменты</div>
-            <div id="segmentContent" class="hidden">
-              <div class="segment-search"><span class="segment-search-icon">🔍</span><input type="text" class="input" id="segmentSearch" placeholder="Поиск сегментов..." /></div>
-              <div id="segmentGroups"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="panel" id="panel-filters">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="card-icon">2</div><div><div class="text-lg">Условия отбора</div><div class="text-xs text-muted">Нажмите «Применить» для расчёта</div></div></div>
-          </div>
-          <div class="card-body">
-            <div class="filter-add" style="margin-bottom:16px;"><button class="btn-secondary" id="btnAddFilter">+ Добавить условие</button></div>
-            <div id="filterRules"></div>
-            <div id="filterEmpty" class="text-muted" style="text-align:center;padding:16px;">Добавьте условия для фильтрации</div>
-            <div class="apply-bar hidden" id="filterApplyBar">
-              <span class="apply-bar-text">Измените условия, затем нажмите кнопку</span>
-              <button class="btn btn-sm" id="btnApplyFilters">Применить фильтры</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="panel" id="panel-priority">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="card-icon">3</div><div><div class="text-lg">Порядок отбора</div><div class="text-xs text-muted">Перетащите для изменения приоритета</div></div></div>
-            <button class="btn-secondary btn-sm" id="btnDefaultPriority">По умолчанию</button>
-          </div>
-          <div class="card-body">
-            <div class="priority-list" id="priorityList">
-              <div class="text-muted" style="text-align:center;padding:16px;" id="priorityEmpty">Загрузите файл, чтобы настроить приоритеты</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="panel" id="panel-employees">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="card-icon">4</div><div><div class="text-lg">Распределение по сотрудникам</div><div class="text-xs text-muted">Настройте лимит и нажмите «Применить»</div></div></div>
-          </div>
-          <div class="card-body">
-            <div class="employee-controls">
-              <div class="cap-slider-wrap">
-                <span class="text-sm font-medium">Лимит:</span>
-                <input type="range" min="10" max="500" value="100" id="capSlider" class="cap-slider" />
-                <span class="cap-value" id="capValue">100</span>
-              </div>
-              <div class="employee-actions">
-                <button class="btn-secondary btn-sm" id="btnEqual">⚖️ Поровну</button>
-                <button class="btn-secondary btn-sm" id="btnFill">🎯 Заполнить</button>
-              </div>
-            </div>
-            <div id="employeeEmpty" class="text-muted" style="text-align:center;padding:16px;">Сначала примените фильтры</div>
-            <div class="employee-list hidden" id="employeeList"></div>
-            <div class="apply-bar hidden" id="employeeApplyBar">
-              <span class="apply-bar-text">Настройте лимит и квоты, затем нажмите кнопку</span>
-              <button class="btn btn-sm" id="btnApplyEmployees">Применить распределение</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <aside class="preview-panel">
-      <div class="chart-card"><div class="chart-header"><span class="chart-title">Сегменты в отборе</span></div><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
-      <div class="chart-card"><div class="chart-header"><span class="chart-title">Сотрудники • Топ</span></div><div class="chart-wrap"><canvas id="employeeChart"></canvas></div></div>
-      
-      <div class="card">
-        <div style="padding:12px 16px;border-bottom:1px solid var(--border-default);display:flex;justify-content:space-between;align-items:center;">
-          <span class="text-sm font-semibold">👁️ Превью</span>
-          <span class="text-xs text-muted" id="previewCount">0 записей</span>
-        </div>
-        <div class="preview-table-wrap">
-          <table class="preview-table">
-            <thead><tr><th>ФИО</th><th>Телефон</th><th>Сегмент</th><th>Сумма</th></tr></thead>
-            <tbody id="previewBody"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-body">
-          <div class="text-lg font-bold" style="margin-bottom:16px;">✅ Готово к выгрузке</div>
-          <div class="export-checklist">
-            <div class="export-item">
-              <div class="export-check checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-              <span class="export-label">Уникальных телефонов</span>
-              <span class="export-value" id="expPhones">—</span>
-            </div>
-            <div class="export-item">
-              <div class="export-check checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-              <span class="export-label">Сотрудников</span>
-              <span class="export-value" id="expEmployees">—</span>
-            </div>
-          </div>
-          <button class="btn w-full" id="btnExport" disabled>🚀 Выгрузить файл</button>
-        </div>
-      </div>
-    </aside>
-  </main>
-
-  <div class="toast-container" id="toastContainer"></div>
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-content"><div class="loading-spinner"></div><div style="font-weight:600;color:var(--text-secondary);" id="loadingText">Загружаю...</div></div>
-  </div>
-
 <script>
 (function() {
-  'use strict';
+'use strict';
 
-  const $ = s => document.querySelector(s);
-  const $$ = s => document.querySelectorAll(s);
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-  const state = {
-    rawData: [], columns: [],
-    segmentField: '', employeeField: '', phoneField: '',
-    selectedSegments: new Set(),
-    candidateRows: [], finalRows: [],
-    employeeCap: 100, employees: [],
-    loaded: false
-  };
+const state = {
+  rawData: [],
+  columns: [],
+  segmentField: 'Категория',
+  employeeField: 'Сотрудник',
+  phoneField: '',
+  selectedSegments: new Set(),
+  candidateRows: [],
+  finalRows: [],
+  employees: [],
+  cap: 100
+};
 
-  function formatNum(n) { return n !== undefined && n !== null ? new Intl.NumberFormat('ru-RU').format(n) : '—'; }
-  function esc(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function normalizeDigits(v) { return String(v ?? '').replace(/\D/g, ''); }
-
-  function showToast(msg, type='success') {
-    const c = $('#toastContainer');
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<div class="toast-icon">${type==='success'?'✓':type==='warning'?'!':'✕'}</div><span class="toast-message">${msg}</span>`;
-    c.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(20px)'; setTimeout(()=>t.remove(),200); }, 3000);
-  }
-
-  function showLoading(txt='Загружаю...') { $('#loadingText').textContent = txt; $('#loadingOverlay').classList.add('active'); }
-  function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
-
-  function updateMetrics() {
-    $('#metricTotal').textContent = state.rawData.length ? formatNum(state.rawData.length) : '—';
-    
-    let afterSeg = 0;
-    if (state.segmentField && state.selectedSegments.size > 0) {
-      afterSeg = state.rawData.filter(r => state.selectedSegments.has(String(r[state.segmentField] ?? '').trim() || '—')).length;
-    }
-    $('#metricSegments').textContent = state.rawData.length ? formatNum(afterSeg) : '—';
-    $('#metricFilters').textContent = state.candidateRows.length ? formatNum(state.candidateRows.length) : '—';
-    $('#metricFinal').textContent = state.finalRows.length ? formatNum(state.finalRows.length) : '—';
-    
-    const activeEmps = state.employees.filter(e => !e.excluded && e.quota > 0).length;
-    $('#metricEmployees').textContent = state.employees.length ? `${activeEmps}/${state.employees.length}` : '—';
-    
-    const phones = new Set();
-    state.finalRows.forEach(r => {
-      const p = normalizeDigits(r[state.phoneField]);
-      if (p.length >= 10) phones.add(p);
-    });
-    $('#expPhones').textContent = phones.size ? formatNum(phones.size) : '—';
-    $('#expEmployees').textContent = activeEmps ? String(activeEmps) : '—';
-  }
-
-  function findField(candidates) {
-    const norm = s => String(s).toLowerCase().replace(/[\s_.,-]/g, '');
-    for (const c of candidates) {
-      const found = state.columns.find(col => norm(col) === norm(c));
-      if (found) return found;
-    }
-    return '';
-  }
-
-  // ===== FILE UPLOAD =====
-  const uploadSection = $('#uploadSection');
-  const fileInput = $('#fileInput');
-  uploadSection.addEventListener('click', () => fileInput.click());
-  uploadSection.addEventListener('dragover', e => { e.preventDefault(); uploadSection.classList.add('dragover'); });
-  uploadSection.addEventListener('dragleave', () => uploadSection.classList.remove('dragover'));
-  uploadSection.addEventListener('drop', e => { e.preventDefault(); uploadSection.classList.remove('dragover'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
-
-  function handleFile(file) {
-    showLoading('Парсинг файла...');
-    const reader = new FileReader();
-    reader.onload = evt => {
-      try {
-        let workbook;
-        if (/\.csv$/i.test(file.name)) workbook = XLSX.read(evt.target.result, { type: 'string' });
-        else workbook = XLSX.read(evt.target.result, { type: 'array' });
-        
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        state.rawData = rows;
-        state.columns = Object.keys(rows[0] || {});
-        
-        state.segmentField = findField(['Категория', 'Category', 'Segment', 'Сегмент']);
-        state.employeeField = findField(['Сотрудник', 'Employee', 'Менеджер', 'Manager']);
-        state.phoneField = findField(['Телефон', 'Phone', 'Tel', 'Мобильный']);
-        
-        if (!state.segmentField || !state.employeeField || !state.phoneField) {
-          hideLoading();
-          showToast(`Не найдены обязательные поля. Колонки: ${state.columns.join(', ')}`, 'error');
-          return;
-        }
-        
-        state.loaded = true;
-        uploadSection.classList.add('loaded');
-        uploadSection.querySelector('.upload-text').textContent = `✅ ${file.name} • ${formatNum(rows.length)} строк`;
-        uploadSection.querySelector('.upload-hint').textContent = `${state.columns.length} полей • Заменить файл`;
-        
-        buildSegments();
-        $$('.tab').forEach(t => t.classList.remove('disabled'));
-        $('#btnSelectAll').disabled = false;
-        $('#btnClearAll').disabled = false;
-        setDefaultPriority();
-        hideLoading();
-        showToast(`Загружено: ${rows.length} строк`);
-        updateMetrics();
-      } catch (err) {
-        hideLoading();
-        showToast(`Ошибка: ${err.message}`, 'error');
-      }
-    };
-    if (/\.csv$/i.test(file.name)) reader.readAsText(file, 'utf-8');
-    else reader.readAsArrayBuffer(file);
-  }
-
-  // ===== SEGMENTS =====
-  function buildSegments() {
-    const field = state.segmentField;
-    if (!field) return;
-    const map = new Map();
-    state.rawData.forEach(r => {
-      const val = String(r[field] ?? '').trim() || '—';
-      map.set(val, (map.get(val) || 0) + 1);
-    });
-    
-    const groups = { 'VIC': [], 'Русские': [], 'Прочее': [] };
-    [...map.entries()].sort((a, b) => {
-      const isVic = v => /^VIC/i.test(v);
-      const isRu = v => /^[А-Яа-яЁё]/.test(v);
-      const ga = isVic(a[0]) ? 0 : isRu(a[0]) ? 1 : 2;
-      const gb = isVic(b[0]) ? 0 : isRu(b[0]) ? 1 : 2;
-      return ga !== gb ? ga - gb : a[0].localeCompare(b[0], 'ru');
-    }).forEach(([val, count]) => {
-      const isVic = /^VIC/i.test(val);
-      const isRu = /^[А-Яа-яЁё]/.test(val);
-      groups[isVic ? 'VIC' : isRu ? 'Русские' : 'Прочее'].push({ val, count });
-    });
-    
-    state.selectedSegments = new Set([...map.keys()]);
-    let html = '';
-    for (const [name, items] of Object.entries(groups)) {
-      if (!items.length) continue;
-      const total = items.reduce((s, i) => s + i.count, 0);
-      html += `<div class="segment-group"><div class="segment-group-header"><div class="segment-group-title">${name === 'VIC' ? '★' : ''} ${name}</div><span class="segment-group-count">${formatNum(total)}</span></div><div class="segment-list">`;
-      items.forEach(({ val, count }) => {
-        html += `<div class="segment-item active" data-seg="${esc(val)}"><div class="segment-checkbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span class="segment-name">${esc(val)}</span><span class="segment-count">${count}</span></div>`;
-      });
-      html += '</div></div>';
-    }
-    $('#segmentGroups').innerHTML = html;
-    $('#segmentEmpty').classList.add('hidden');
-    $('#segmentContent').classList.remove('hidden');
-    
-    $$('.segment-item').forEach(item => {
-      item.addEventListener('click', () => {
-        item.classList.toggle('active');
-        const seg = item.dataset.seg;
-        state.selectedSegments.has(seg) ? state.selectedSegments.delete(seg) : state.selectedSegments.add(seg);
-        updateMetrics();
-      });
-    });
-  }
-
-  $('#btnSelectAll').addEventListener('click', () => {
-    $$('.segment-item').forEach(i => { i.classList.add('active'); state.selectedSegments.add(i.dataset.seg); });
-    updateMetrics();
+// ===== УЛУЧШЕННЫЙ ПОИСК ПОЛЕЙ =====
+function findPhoneField(cols) {
+  const variants = ['телефон','phone','mobile','моб','тел'];
+  return cols.find(c => {
+    const norm = c.toLowerCase().replace(/\s/g,'');
+    return variants.some(v => norm.includes(v));
   });
-  $('#btnClearAll').addEventListener('click', () => {
-    $$('.segment-item').forEach(i => i.classList.remove('active'));
-    state.selectedSegments.clear();
-    updateMetrics();
-  });
-  $('#segmentSearch').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    $$('.segment-item').forEach(i => i.style.display = i.querySelector('.segment-name').textContent.toLowerCase().includes(q) ? '' : 'none');
-  });
+}
 
-  // ===== TABS =====
-  $$('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if (tab.classList.contains('disabled')) return;
-      $$('.tab').forEach(t => t.classList.remove('active'));
-      $$('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      $(`#panel-${tab.dataset.tab}`).classList.add('active');
-    });
-  });
+// ===== PARSE FILE =====
+window.handleFile = function(file) {
+  const reader = new FileReader();
 
-  // ===== FILTERS =====
-  let filterId = 0;
-  $('#btnAddFilter').addEventListener('click', () => {
-    if (!state.loaded) return showToast('Загрузите файл', 'warning');
-    filterId++;
-    const cols = state.columns.filter(c => c !== state.segmentField && c !== state.employeeField);
-    const rule = document.createElement('div');
-    rule.className = 'filter-rule';
-    rule.innerHTML = `
-      <div class="filter-rule-header"><div class="flex items-center gap-2"><span class="filter-rule-number">${filterId}</span><span class="font-medium">Условие</span></div><button class="btn-ghost" data-remove>✕</button></div>
-      <div class="filter-fields">
-        <div><label class="filter-field-label">Поле</label><select class="select filter-field">${cols.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>
-        <div><label class="filter-field-label">Условие</label><select class="select filter-op"><option value="contains">Содержит</option><option value="not_contains">Не содержит</option><option value="eq">Равно</option><option value="gt">Больше</option><option value="gte">Больше или равно</option><option value="lt">Меньше</option><option value="lte">Меньше или равно</option></select></div>
-        <div><label class="filter-field-label">Значение</label><input type="text" class="input filter-value" placeholder="Введите..." /></div>
-        <div style="padding-bottom:2px;"><button class="btn-secondary btn-sm" data-remove style="width:100%;">✕</button></div>
-      </div>`;
-    $('#filterRules').appendChild(rule);
-    $('#filterEmpty').classList.add('hidden');
-    $('#filterApplyBar').classList.remove('hidden');
-    
-    rule.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => {
-      rule.remove();
-      if (!$$('.filter-rule').length) {
-        $('#filterEmpty').classList.remove('hidden');
-        $('#filterApplyBar').classList.add('hidden');
-        state.candidateRows = []; state.finalRows = [];
-        updateMetrics(); updatePreview(); updateCharts();
-      }
-    }));
-  });
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-  $('#btnApplyFilters').addEventListener('click', () => {
-    if (!state.selectedSegments.size) return showToast('Выберите сегменты', 'warning');
-    showLoading('Считаю отбор...');
-    setTimeout(() => {
-      try {
-        const filters = [];
-        $$('.filter-rule').forEach(r => {
-          const v = r.querySelector('.filter-value').value;
-          if (v) filters.push({ field: r.querySelector('.filter-field').value, op: r.querySelector('.filter-op').value, value: v });
-        });
-        state.candidateRows = state.rawData.filter(row => {
-          if (!state.selectedSegments.has(String(row[state.segmentField] ?? '').trim() || '—')) return false;
-          return filters.every(f => matchesFilter(row, f));
-        });
-        buildEmployees();
-        hideLoading();
-        showToast(`Отбор: ${formatNum(state.candidateRows.length)} записей`);
-        updateMetrics(); updatePreview(); updateCharts();
-      } catch (e) { hideLoading(); showToast(e.message, 'error'); }
-    }, 100);
-  });
+    state.rawData = data;
+    state.columns = Object.keys(data[0] || {});
 
-  function matchesFilter(row, f) {
-    const raw = String(row[f.field] ?? '');
-    const val = f.value.toLowerCase();
-    switch(f.op) {
-      case 'contains': return raw.toLowerCase().includes(val);
-      case 'not_contains': return !raw.toLowerCase().includes(val);
-      case 'eq': return raw.toLowerCase() === val;
-      case 'gt': return parseFloat(raw.replace(/\s|,/g,'.')) > parseFloat(val.replace(/\s|,/g,'.'));
-      case 'gte': return parseFloat(raw.replace(/\s|,/g,'.')) >= parseFloat(val.replace(/\s|,/g,'.'));
-      case 'lt': return parseFloat(raw.replace(/\s|,/g,'.')) < parseFloat(val.replace(/\s|,/g,'.'));
-      case 'lte': return parseFloat(raw.replace(/\s|,/g,'.')) <= parseFloat(val.replace(/\s|,/g,'.'));
-      default: return true;
-    }
-  }
+    state.phoneField = findPhoneField(state.columns);
 
-  // ===== PRIORITY =====
-  function setDefaultPriority() {
-    const fields = ['Посл.комм','Общ.сумма','Категория','Посл.покупка'].filter(f => state.columns.includes(f));
-    const items = fields.map(f => ({ field: f, dir: f==='Категория'?'custom':'desc' }));
-    renderPriority(items.length ? items : [{ field: state.columns[0], dir: 'desc' }]);
-  }
-  function renderPriority(items) {
-    const list = $('#priorityList');
-    list.innerHTML = items.map(i => `<div class="priority-item" draggable="true" data-field="${esc(i.field)}" data-dir="${i.dir}"><span class="priority-drag">⋮</span><span class="priority-field">${esc(i.field)}</span><span class="priority-direction" data-dir="${i.dir}">${i.dir==='desc'?'▼ Сверху':i.dir==='asc'?'▲ Снизу':'★ По порядку'}</span></div>`).join('');
-    list.querySelectorAll('.priority-direction').forEach(d => d.addEventListener('click', e => {
-      e.stopPropagation();
-      const next = d.dataset.dir === 'desc' ? 'asc' : d.dataset.dir === 'asc' ? 'custom' : 'desc';
-      d.dataset.dir = next;
-      d.textContent = next === 'desc' ? '▼ Сверху' : next === 'asc' ? '▲ Снизу' : '★ По порядку';
-    }));
-    let dragEl = null;
-    list.querySelectorAll('.priority-item').forEach(item => {
-      item.addEventListener('dragstart', e => { dragEl = item; item.classList.add('dragging'); });
-      item.addEventListener('dragend', () => { item.classList.remove('dragging'); dragEl = null; });
-      item.addEventListener('dragover', e => {
-        e.preventDefault(); if (!dragEl || dragEl === item) return;
-        const rect = item.getBoundingClientRect();
-        e.clientY < rect.top + rect.height/2 ? item.parentNode.insertBefore(dragEl, item) : item.parentNode.insertBefore(dragEl, item.nextSibling);
-      });
-    });
-  }
-  $('#btnDefaultPriority').addEventListener('click', setDefaultPriority);
-
-  // ===== EMPLOYEES =====
-  function buildEmployees() {
-    if (!state.candidateRows.length) {
-      $('#employeeEmpty').classList.remove('hidden');
-      $('#employeeList').classList.add('hidden');
-      $('#employeeApplyBar').classList.add('hidden');
+    if (!state.phoneField) {
+      alert('❌ Не найдено поле телефона');
       return;
     }
-    const map = new Map();
-    state.candidateRows.forEach(r => {
-      const name = String(r[state.employeeField] ?? '').trim() || '—';
-      if (!map.has(name)) map.set(name, []);
-      map.get(name).push(r);
-    });
-    state.employees = [...map.entries()].map(([name, rows]) => ({ name, found: rows.length, quota: Math.min(rows.length, state.employeeCap), excluded: false })).sort((a,b) => b.found - a.found);
-    renderEmployees();
-    $('#employeeEmpty').classList.add('hidden');
-    $('#employeeList').classList.remove('hidden');
-    $('#employeeApplyBar').classList.remove('hidden');
-  }
 
-  function renderEmployees() {
-    const cap = state.employeeCap;
-    $('#employeeList').innerHTML = state.employees.map((emp, i) => {
-      const pct = Math.min(100, Math.round((emp.quota / emp.found) * 100));
-      const q = Math.min(emp.found, cap);
-      return `<div class="employee-item" data-idx="${i}">
-        <div class="employee-info"><div class="employee-name">${esc(emp.name)}</div><div class="employee-found">Найдено: ${formatNum(emp.found)}</div><div class="employee-bar"><div class="employee-bar-fill" style="width:${pct}%"></div></div></div>
-        <div class="text-sm font-semibold">${emp.quota}</div>
-        <div class="employee-quota"><input type="number" value="${q}" min="0" max="${emp.found}" ${emp.excluded?'disabled':''} /></div>
-        <button class="employee-exclude ${emp.excluded?'active':''}" title="Исключить">✕</button>
-      </div>`;
-    }).join('');
-    
-    $('#employeeList').querySelectorAll('.employee-item').forEach(item => {
-      const idx = parseInt(item.dataset.idx);
-      const input = item.querySelector('input');
-      const exBtn = item.querySelector('.employee-exclude');
-      
-      input.addEventListener('change', () => {
-        let v = Math.max(0, Math.min(parseInt(input.value)||0, state.employees[idx].found, cap));
-        input.value = v; state.employees[idx].quota = v;
-        item.querySelector('.employee-bar-fill').style.width = `${Math.min(100, Math.round((v/state.employees[idx].found)*100))}%`;
-        item.querySelector('.font-semibold').textContent = v;
-      });
-      
-      exBtn.addEventListener('click', () => {
-        state.employees[idx].excluded = !state.employees[idx].excluded;
-        exBtn.classList.toggle('active');
-        if (state.employees[idx].excluded) {
-          input.value = 0; input.disabled = true; state.employees[idx].quota = 0;
-          item.querySelector('.employee-bar-fill').style.width = '0%';
-          item.querySelector('.font-semibold').textContent = '0';
-        } else {
-          input.disabled = false; input.value = Math.min(state.employees[idx].found, cap);
-          state.employees[idx].quota = Math.min(state.employees[idx].found, cap);
-          input.dispatchEvent(new Event('change'));
-        }
-      });
-    });
-  }
+    initAfterLoad();
+  };
 
-  $('#capSlider').addEventListener('input', e => {
-    state.employeeCap = parseInt(e.target.value);
-    $('#capValue').textContent = state.employeeCap;
+  reader.readAsArrayBuffer(file);
+};
+
+// ===== ПОСЛЕ ЗАГРУЗКИ =====
+function initAfterLoad() {
+  buildSegments();
+
+  // включаем табы
+  $$('.tab').forEach(t => {
+    t.classList.remove('disabled');
+    t.onclick = () => switchTab(t.dataset.tab);
+  });
+}
+
+// ===== ТАБЫ =====
+function switchTab(name) {
+  $$('.tab').forEach(t => t.classList.remove('active'));
+  $$('.panel').forEach(p => p.classList.remove('active'));
+
+  $(`.tab[data-tab="${name}"]`).classList.add('active');
+  $(`#panel-${name}`).classList.add('active');
+}
+
+// ===== СЕГМЕНТЫ =====
+function buildSegments() {
+  const map = new Map();
+
+  state.rawData.forEach(r => {
+    const v = r[state.segmentField] || '—';
+    map.set(v, (map.get(v) || 0) + 1);
   });
 
-  $('#btnApplyEmployees').addEventListener('click', () => {
-    if (!state.candidateRows.length) return showToast('Сначала примените фильтры', 'warning');
-    showLoading('Собираю итог...');
-    setTimeout(() => {
-      const groups = new Map();
-      state.candidateRows.forEach(r => {
-        const n = String(r[state.employeeField] ?? '').trim() || '—';
-        if (!groups.has(n)) groups.set(n, []);
-        groups.get(n).push(r);
-      });
-      state.finalRows = [];
-      state.employees.forEach(emp => {
-        if (emp.excluded || emp.quota <= 0) return;
-        state.finalRows.push(...(groups.get(emp.name) || []).slice(0, emp.quota));
-      });
-      hideLoading();
-      showToast(`Итог: ${formatNum(state.finalRows.length)}`);
-      updateMetrics(); updatePreview(); updateCharts();
-      $('#btnExport').disabled = state.finalRows.length === 0;
-      $('#btnExportTop').disabled = state.finalRows.length === 0;
-    }, 100);
+  state.selectedSegments = new Set([...map.keys()]);
+
+  const sorted = [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ru'));
+
+  $('#segmentGroups').innerHTML = sorted.map(([val,count])=>`
+    <div class="segment-item active" data-val="${val}">
+      ${val} (${count})
+    </div>
+  `).join('');
+
+  $$('.segment-item').forEach(el=>{
+    el.onclick = ()=>{
+      el.classList.toggle('active');
+      state.selectedSegments.has(el.dataset.val)
+        ? state.selectedSegments.delete(el.dataset.val)
+        : state.selectedSegments.add(el.dataset.val);
+    };
+  });
+}
+
+// ===== ФИЛЬТРЫ (ТИПЫ) =====
+function detectType(val) {
+  if (!val) return 'text';
+
+  if (!isNaN(Date.parse(val))) return 'date';
+  if (!isNaN(parseFloat(val))) return 'number';
+
+  return 'text';
+}
+
+function applyFilters() {
+  state.candidateRows = state.rawData.filter(r=>{
+    if (!state.selectedSegments.has(r[state.segmentField])) return false;
+
+    // тут можно расширять условия
+    return true;
   });
 
-  $('#btnEqual').addEventListener('click', () => {
-    const active = state.employees.filter(e => !e.excluded);
-    if (!active.length) return;
-    const per = Math.min(state.employeeCap, Math.floor(state.candidateRows.length / active.length));
-    active.forEach(e => e.quota = Math.min(e.found, per));
-    renderEmployees();
-  });
-  $('#btnFill').addEventListener('click', () => {
-    state.employees.forEach(e => { if (!e.excluded) e.quota = Math.min(e.found, state.employeeCap); });
-    renderEmployees();
-  });
+  buildEmployees();
+  updateSummary();
+}
 
-  // ===== PREVIEW & CHARTS =====
-  function updatePreview() {
-    const rows = state.finalRows.length ? state.finalRows : state.candidateRows;
-    const tbody = $('#previewBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>'; $('#previewCount').textContent='0'; return; }
-    tbody.innerHTML = rows.slice(0, 30).map(r => {
-      const p = normalizeDigits(r[state.phoneField]);
-      const fmt = p.length >= 10 ? `+${p[0]} (${p.slice(1,4)}) ${p.slice(4,7)}-${p.slice(7,9)}-${p.slice(9,11)}` : p;
-      return `<tr><td>${esc(r['ФИО']||r['Имя']||'—')}</td><td>${fmt}</td><td>${esc(r[state.segmentField]||'—')}</td><td>${esc(r['Общ.сумма']||r['Сумма покупок за период']||'—')}</td></tr>`;
-    }).join('');
-    $('#previewCount').textContent = `${rows.length} записей`;
-  }
+// ===== СОТРУДНИКИ =====
+function buildEmployees() {
+  const map = new Map();
 
-  let charts = { segment: null, employee: null };
-  function updateCharts() {
-    const sData = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 6);
-    if (charts.segment) charts.segment.destroy();
-    charts.segment = new Chart($('#segmentChart').getContext('2d'), {
-      type: 'doughnut', data: { labels: sData.labels, datasets: [{ data: sData.values, backgroundColor: ['#f37021','#ff8a4a','#f3a86b','#d95c22','#8d5a4a','#5a3d36'], borderWidth: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#fff', padding: 10 } } }, cutout: '60%' }
-    });
-
-    const eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
-    const eData = makeChartData(eBase, state.employeeField, 6);
-    if (charts.employee) charts.employee.destroy();
-    charts.employee = new Chart($('#employeeChart').getContext('2d'), {
-      type: 'bar', data: { labels: eData.labels, datasets: [{ data: eData.values, backgroundColor: '#f37021', borderRadius: 6, maxBarThickness: 24 }] },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.06)' } }, y: { ticks: { color: '#fff', font: { size: 11 } }, grid: { display: false } } } }
-    });
-  }
-
-  function makeChartData(rows, field, topN) {
-    const map = new Map();
-    rows.forEach(r => { const k = String(r[field] ?? '').trim() || '—'; map.set(k, (map.get(k)||0)+1); });
-    const sorted = [...map.entries()].sort((a,b) => b[1]-a[1]);
-    const top = sorted.slice(0, topN);
-    const other = sorted.slice(topN).reduce((s, [,v]) => s+v, 0);
-    const labels = top.map(x=>x[0]); const values = top.map(x=>x[1]);
-    if (other > 0) { labels.push('Прочее'); values.push(other); }
-    return { labels, values };
-  }
-
-  // ===== EXPORT / SAVE / RESET =====
-  $('#btnExport, #btnExportTop').addEventListener('click', () => {
-    if (!state.finalRows.length) return showToast('Сначала соберите итог', 'warning');
-    const phones = state.finalRows.map(r => normalizeDigits(r[state.phoneField])).filter(v => v.length >= 10);
-    const blob = new Blob([...new Set(phones)].join('\n'), { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `compas_${new Date().toISOString().slice(0,10)}.txt`; a.click();
-    URL.revokeObjectURL(a.href);
-    showToast(`Готово: ${formatNum(new Set(phones).size)} номеров`);
+  state.candidateRows.forEach(r=>{
+    const emp = r[state.employeeField] || '—';
+    map.set(emp, (map.get(emp)||0)+1);
   });
 
-  $('#btnSave').addEventListener('click', () => {
-    localStorage.setItem('compas_cfg', JSON.stringify({ selected: [...state.selectedSegments], cap: state.employeeCap, time: Date.now() }));
-    showToast('Сохранено');
-  });
+  state.employees = [...map.entries()].map(([name,count])=>({
+    name,
+    found: count,
+    quota: Math.min(count, state.cap),
+    excluded: false
+  }));
 
-  $('#btnReset').addEventListener('click', () => {
-    if (!confirm('Сбросить всё?')) return;
-    state.rawData = []; state.candidateRows = []; state.finalRows = []; state.selectedSegments = new Set(); state.employees = []; state.loaded = false;
-    uploadSection.classList.remove('loaded');
-    uploadSection.querySelector('.upload-text').textContent = 'Перетащите файл сюда или нажмите для выбора';
-    $('#segmentGroups').innerHTML = ''; $('#segmentEmpty').classList.remove('hidden'); $('#segmentContent').classList.add('hidden');
-    $('#filterRules').innerHTML = ''; $('#filterEmpty').classList.remove('hidden'); $('#filterApplyBar').classList.add('hidden');
-    $('#employeeList').classList.add('hidden'); $('#employeeEmpty').classList.remove('hidden'); $('#employeeApplyBar').classList.add('hidden');
-    $('#priorityList').innerHTML = '<div class="text-muted" style="text-align:center;padding:16px;">Загрузите файл</div>';
-    $$('.tab').forEach((t,i) => { t.classList.remove('active'); if(i===0) t.classList.add('active'); t.classList.add('disabled'); });
-    $('#panel-segments').classList.add('active');
-    $('#btnSelectAll').disabled = true; $('#btnClearAll').disabled = true;
-    $('#btnExport').disabled = true; $('#btnExportTop').disabled = true;
-    ['Total','Segments','Filters','Final','Employees'].forEach(k => $(`#metric${k}`).textContent = '—');
-    $('#expPhones').textContent = '—'; $('#expEmployees').textContent = '—';
-    updatePreview(); updateCharts();
-    showToast('Сброшено', 'warning');
-  });
+  renderEmployees();
+}
 
-  // Init
-  updateCharts();
+function renderEmployees() {
+  $('#employeeList').innerHTML = state.employees.map((e,i)=>`
+    <div>
+      ${e.name} — найдено ${e.found}
+      <input type="number" value="${e.quota}" data-i="${i}">
+    </div>
+  `).join('');
+}
+
+// ===== SUMMARY =====
+function updateSummary() {
+  $('#metricTotal').textContent = state.rawData.length;
+  $('#metricSegments').textContent = state.selectedSegments.size;
+  $('#metricFilters').textContent = state.candidateRows.length;
+}
+
+// ===== INIT =====
+$('#fileInput').onchange = e=>{
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+};
+
 })();
 </script>
-</body>
-</html>
