@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Campaign Engine — Compas</title>
+<title>Compas Campaign Engine</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    --bg:#2b221f;
-    --bg2:#332824;
+    --bg:#241b19;
+    --bg2:#2d221f;
     --panel:#3a2f2b;
     --panel2:#463733;
     --line:rgba(255,255,255,.08);
@@ -23,20 +24,24 @@
     --good:#72d39b;
     --warn:#ffd27a;
     --bad:#ff8d8d;
-    --shadow:0 16px 34px rgba(0,0,0,.28);
-    --radius:20px;
+    --shadow:0 18px 38px rgba(0,0,0,.28);
+    --shadow-soft:0 10px 24px rgba(0,0,0,.18);
+    --radius:22px;
   }
 
   *{ box-sizing:border-box; }
   html,body{
     margin:0;
     padding:0;
-    background:radial-gradient(circle at top, #3a2f2b 0, var(--bg) 42%, #231b18 100%);
+    background:
+      radial-gradient(circle at top left, rgba(239,111,46,.12), transparent 28%),
+      radial-gradient(circle at top right, rgba(255,138,74,.08), transparent 26%),
+      linear-gradient(180deg, #2c2220 0%, var(--bg) 45%, #1e1715 100%);
     color:var(--text);
     font-family:"Nunito",system-ui,sans-serif;
   }
   body{ padding:18px; }
-  .wrap{ max-width:1600px; margin:0 auto; }
+  .wrap{ max-width:1620px; margin:0 auto; }
 
   .hero{
     display:flex;
@@ -56,29 +61,30 @@
     border:1px solid var(--line);
     color:var(--muted);
     font-size:12px;
-    font-weight:800;
-    letter-spacing:.04em;
+    font-weight:900;
+    letter-spacing:.05em;
     margin-bottom:12px;
+    text-transform:uppercase;
   }
   .dot{
     width:8px;
     height:8px;
     border-radius:50%;
     background:var(--accent);
-    box-shadow:0 0 0 4px rgba(239,111,46,.14);
+    box-shadow:0 0 0 4px rgba(239,111,46,.15);
   }
   h1{
     margin:0;
-    font-size:30px;
+    font-size:31px;
     line-height:1.05;
-    letter-spacing:-.02em;
+    letter-spacing:-.03em;
   }
   .sub{
-    margin:8px 0 0;
+    margin:10px 0 0;
     color:var(--muted2);
     font-size:14px;
     font-weight:700;
-    max-width:980px;
+    max-width:1030px;
   }
 
   .top-actions{
@@ -92,10 +98,11 @@
     border:none;
     cursor:pointer;
     font-family:inherit;
-    font-weight:800;
+    font-weight:900;
     border-radius:999px;
     transition:.18s ease;
     user-select:none;
+    white-space:nowrap;
   }
   .btn{
     color:#fff;
@@ -139,14 +146,19 @@
 
   .grid{
     display:grid;
-    grid-template-columns: 1.15fr .95fr;
+    grid-template-columns: 1.12fr .98fr;
+    gap:14px;
+    align-items:start;
+  }
+  .stack{
+    display:grid;
     gap:14px;
   }
-  .stack{ display:grid; gap:14px; }
 
   .card{
-    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
-               linear-gradient(180deg, var(--panel), var(--panel2));
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
+      linear-gradient(180deg, var(--panel), var(--panel2));
     border:1px solid var(--line);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
@@ -162,12 +174,12 @@
   .card-title{
     display:flex;
     align-items:flex-start;
-    gap:10px;
+    gap:12px;
     min-width:0;
   }
   .step{
-    width:30px;
-    height:30px;
+    width:32px;
+    height:32px;
     border-radius:10px;
     flex:0 0 auto;
     display:grid;
@@ -177,11 +189,13 @@
     border:1px solid rgba(239,111,46,.22);
     font-weight:900;
     font-size:13px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
   }
   .card-title h2{
     margin:0;
     font-size:18px;
     line-height:1.1;
+    letter-spacing:-.02em;
   }
   .card-title p{
     margin:4px 0 0;
@@ -201,7 +215,7 @@
     display:block;
     margin:0 0 7px;
     font-size:12px;
-    font-weight:800;
+    font-weight:900;
     color:var(--muted2);
     letter-spacing:.04em;
     text-transform:uppercase;
@@ -230,6 +244,29 @@
     font-size:12px;
     font-weight:700;
   }
+
+  .pill-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .mini-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:7px 11px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.10);
+    color:#fff;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.01em;
+  }
+  .mini-pill.ok{ border-color:rgba(114,211,155,.20); background:rgba(114,211,155,.08); color:#dfffea; }
+  .mini-pill.bad{ border-color:rgba(255,141,141,.20); background:rgba(255,141,141,.08); color:#ffe0e0; }
+  .mini-pill.warn{ border-color:rgba(255,210,122,.20); background:rgba(255,210,122,.08); color:#fff0d0; }
+  .mini-pill.accent{ border-color:rgba(239,111,46,.22); background:rgba(239,111,46,.10); color:#ffd7c2; }
 
   .filters, .priority{
     display:grid;
@@ -279,6 +316,19 @@
   }
   .rule-grid.priority-grid{
     grid-template-columns: 1.5fr 1fr auto;
+  }
+  .type-chip{
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    min-height:46px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.12);
+    color:var(--muted);
+    font-weight:900;
+    font-size:12px;
+    padding:0 12px;
   }
 
   .segments-toolbar{
@@ -334,7 +384,8 @@
     align-items:center;
     gap:10px;
     transition:.16s ease;
-    font-weight:800;
+    font-weight:900;
+    box-shadow:0 0 0 rgba(0,0,0,0);
   }
   .seg-pill:hover{
     transform:translateY(-1px);
@@ -347,7 +398,7 @@
   }
   .seg-pill .count{
     font-size:12px;
-    opacity:.9;
+    opacity:.92;
     font-weight:900;
     padding:2px 8px;
     border-radius:999px;
@@ -375,7 +426,7 @@
   }
   .employee-table-head{
     display:grid;
-    grid-template-columns: 1.4fr .45fr .55fr .35fr;
+    grid-template-columns: 1.35fr .5fr .55fr .35fr;
     gap:10px;
     padding:12px 14px;
     background:rgba(255,255,255,.04);
@@ -388,12 +439,12 @@
   }
   .employee-rows{
     display:grid;
-    max-height:420px;
+    max-height:430px;
     overflow:auto;
   }
   .employee-row{
     display:grid;
-    grid-template-columns: 1.4fr .45fr .55fr .35fr;
+    grid-template-columns: 1.35fr .5fr .55fr .35fr;
     gap:10px;
     align-items:center;
     padding:12px 14px;
@@ -417,7 +468,7 @@
     text-align:center;
     font-weight:900;
   }
-  .employee-row .tiny-toggle{
+  .employee-row .toggle-pill{
     display:flex;
     align-items:center;
     justify-content:center;
@@ -427,8 +478,26 @@
     border:1px solid var(--line);
     background:rgba(0,0,0,.12);
     color:#fff;
-    font-weight:800;
+    font-weight:900;
     font-size:13px;
+  }
+  .employee-row .toggle-pill label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    justify-content:center;
+    cursor:pointer;
+    width:100%;
+    margin:0;
+    text-transform:none;
+    letter-spacing:0;
+    color:inherit;
+  }
+  .employee-row input[type="checkbox"]{
+    width:18px;
+    height:18px;
+    min-height:auto;
+    padding:0;
   }
 
   .summary-grid{
@@ -442,6 +511,7 @@
     background:rgba(255,255,255,.04);
     border-radius:18px;
     padding:12px;
+    box-shadow:var(--shadow-soft);
   }
   .summary-card .k{
     font-size:12px;
@@ -463,6 +533,43 @@
     font-weight:700;
   }
 
+  .chart-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .chart-card{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    border-radius:18px;
+    padding:12px 12px 10px;
+    box-shadow:var(--shadow-soft);
+    min-height:300px;
+  }
+  .chart-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    gap:10px;
+  }
+  .chart-head h3{
+    margin:0;
+    font-size:14px;
+    font-weight:900;
+  }
+  .chart-head span{
+    color:var(--muted2);
+    font-size:12px;
+    font-weight:800;
+  }
+  .chart-wrap{
+    position:relative;
+    height:250px;
+  }
+  .chart-wrap canvas{ width:100% !important; height:100% !important; }
+
   .summary-lines{
     display:grid;
     gap:10px;
@@ -474,6 +581,7 @@
     padding:12px;
     color:var(--text);
     font-size:13px;
+    line-height:1.45;
   }
   .summary-line b{ color:#fff; }
 
@@ -482,6 +590,7 @@
     border-radius:18px;
     border:1px solid var(--line);
     background:rgba(0,0,0,.10);
+    max-height:520px;
   }
   table{
     width:100%;
@@ -524,9 +633,10 @@
 
   .hidden{ display:none !important; }
 
-  @media (max-width: 1220px){
+  @media (max-width: 1280px){
     .grid{ grid-template-columns:1fr; }
     .summary-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .chart-grid{ grid-template-columns:1fr; }
   }
   @media (max-width: 900px){
     .field-row{ grid-template-columns:1fr; }
@@ -548,14 +658,12 @@
       <div class="eyebrow"><span class="dot"></span><span>COMPAS • CAMPAIGN ENGINE</span></div>
       <h1>Операционный центр отбора клиентской базы</h1>
       <p class="sub">
-        1) загружаем базу, 2) выбираем сегменты только из этой выгрузки, 3) задаём гибкие условия по любым полям,
-        4) настраиваем приоритет отбора, 5) смотрим по каждому сотруднику, сколько нашлось, 6) задаём квоты и потолок,
-        7) выгружаем только номера для запуска коммуникаций.
+        1) загружаем файл, 2) смотрим только реальные сегменты из этой выгрузки, 3) задаём гибкие условия по любым полям,
+        4) выбираем приоритет отбора, 5) видим нагрузку по сотрудникам, 6) ограничиваем количество вручную, 7) выгружаем только номера.
       </p>
     </div>
 
     <div class="top-actions">
-      <button id="btnLoadDemo" class="btn-secondary" type="button">Показать логику</button>
       <button id="btnAnalyze" class="btn" type="button" disabled>2. Посчитать отбор</button>
       <button id="btnBuildFinal" class="btn" type="button" disabled>3. Собрать итог</button>
       <button id="btnExport" class="btn" type="button" disabled>4. Выгрузить номера</button>
@@ -570,7 +678,7 @@
           <div class="card-title">
             <div class="step">1</div>
             <div>
-              <h2>Загрузка базы</h2>
+              <h2>Загрузка файла и проверка полей</h2>
               <p>Фиксированные поля: Категория, Сотрудник, Телефон.</p>
             </div>
           </div>
@@ -582,35 +690,20 @@
               <input id="fileInput" type="file" accept=".xlsx,.csv" />
             </div>
             <div class="field">
-              <label class="label">Категория</label>
-              <div class="employee-row tiny-toggle" style="min-height:46px;">Категория</div>
-            </div>
-            <div class="field">
-              <label class="label">Сотрудник</label>
-              <div class="employee-row tiny-toggle" style="min-height:46px;">Сотрудник</div>
-            </div>
-          </div>
-
-          <div class="field-row" style="margin-top:12px;">
-            <div class="field">
-              <label class="label">Телефон</label>
-              <div class="employee-row tiny-toggle" style="min-height:46px;">Телефон</div>
-            </div>
-            <div class="field">
-              <label class="label">Статус загрузки</label>
-              <div class="employee-row tiny-toggle" style="min-height:46px;">
-                <span id="loadInfo">Файл не загружен</span>
+              <label class="label">Проверка обязательных полей</label>
+              <div class="pill-row" id="fixedFieldPills">
+                <span class="mini-pill accent" data-key="Категория">Категория — ждём файл</span>
+                <span class="mini-pill accent" data-key="Сотрудник">Сотрудник — ждём файл</span>
+                <span class="mini-pill accent" data-key="Телефон">Телефон — ждём файл</span>
               </div>
             </div>
             <div class="field">
-              <label class="label">Проверка полей</label>
-              <div class="employee-row tiny-toggle" style="min-height:46px;">
-                <span id="fieldInfo">Ожидаем файл</span>
-              </div>
+              <label class="label">Строк в файле</label>
+              <div class="type-chip" id="rowCount">—</div>
             </div>
           </div>
 
-          <div class="note">Если в файле нет <b>Категория / Сотрудник / Телефон</b>, система остановится и покажет ошибку.</div>
+          <div class="note" id="loadInfo">Файл не загружен.</div>
         </div>
       </section>
 
@@ -620,7 +713,7 @@
             <div class="step">2</div>
             <div>
               <h2>Сегменты из этой выгрузки</h2>
-              <p>Показываются только значения, которые реально есть в базе. Полные названия, без сокращений.</p>
+              <p>Показываются только значения, которые есть в файле. Сначала VIC, потом русские, потом прочие.</p>
             </div>
           </div>
         </div>
@@ -632,7 +725,7 @@
           <div id="segmentsPanel" class="seg-groups">
             <div class="seg-empty">Загрузите файл, затем здесь появятся сегменты.</div>
           </div>
-          <div class="note">Сначала идут сегменты <b>VIC</b>, потом остальные по алфавиту.</div>
+          <div class="note">Сегменты отображаются полными названиями, без сокращений и без лишних значений.</div>
         </div>
       </section>
 
@@ -642,7 +735,7 @@
             <div class="step">3</div>
             <div>
               <h2>Гибкие условия отбора</h2>
-              <p>Любой столбец, понятные операторы, отдельные поля для дат и чисел.</p>
+              <p>Типы полей определяются по смыслу: дата / число / цифры / текст.</p>
             </div>
           </div>
         </div>
@@ -652,7 +745,10 @@
             <button id="btnAddFilter" class="btn-secondary" type="button">+ Добавить условие</button>
             <button id="btnClearFilters" class="btn-ghost" type="button">Очистить условия</button>
           </div>
-          <div class="note">Примеры: дата последнего контакта до 31.01.2025, оборот больше 100000, сегмент содержит VIC.</div>
+          <div class="note">
+            Телефон и Номер карты — цифры. Общ.сумма, Сумма покупок за период, Из них сумма Прямых продаж, Кол-во штук товаров — числа.
+            Посл.комм, Посл.покупка, ДР, Дата коммуникации — даты.
+          </div>
         </div>
       </section>
 
@@ -661,8 +757,8 @@
           <div class="card-title">
             <div class="step">4</div>
             <div>
-              <h2>Приоритет отбора внутри сотрудника</h2>
-              <p>Именно тут решается, какие записи попадут в первые 50, 80 или 100.</p>
+              <h2>Приоритет отбора</h2>
+              <p>Оставлены только поля, которые ты перечислил. Для категории и пола — свои понятные направления.</p>
             </div>
           </div>
         </div>
@@ -672,7 +768,10 @@
             <button id="btnAddPriority" class="btn-secondary" type="button">+ Добавить критерий</button>
             <button id="btnDefaultPriority" class="btn-ghost" type="button">Заполнить по умолчанию</button>
           </div>
-          <div class="note">Порядок критериев важен: первый решает больше всего. Например, сначала старые контакты, потом больший оборот.</div>
+          <div class="note">
+            Категория сортируется по логике: VIC → Искра → Семья → Друзья → Знакомые → Новички.
+            Пол — М → Ж или Ж → М.
+          </div>
         </div>
       </section>
 
@@ -686,7 +785,7 @@
             <div class="step">5</div>
             <div>
               <h2>Сотрудники и квоты</h2>
-              <p>Верхний предел задаётся один раз и работает для всех сотрудников.</p>
+              <p>Верхний лимит задаётся один раз. Внутри можно вручную уменьшить значения или исключить сотрудника.</p>
             </div>
           </div>
         </div>
@@ -696,9 +795,7 @@
               <label class="label">Верхний предел на сотрудника</label>
               <input id="globalCap" type="number" value="100" min="0" />
             </div>
-            <div class="tiny-toggle" style="min-height:46px;">
-              Можно уменьшать вручную или исключать сотрудника галочкой.
-            </div>
+            <div class="type-chip">Можно уменьшать вручную</div>
           </div>
 
           <div class="employee-table">
@@ -706,7 +803,7 @@
               <span>Сотрудник</span>
               <span>Найдено</span>
               <span>Взять</span>
-              <span>Исключить</span>
+              <span>Искл.</span>
             </div>
             <div id="employeeRows" class="employee-rows">
               <div class="seg-empty" style="padding:14px;">После нажатия «Посчитать отбор» появятся сотрудники и найденные по ним записи.</div>
@@ -720,13 +817,13 @@
           <div class="card-title">
             <div class="step">6</div>
             <div>
-              <h2>Summary и итог</h2>
-              <p>Видно, что отобралось, по каким правилам и сколько пойдёт в выгрузку.</p>
+              <h2>Визуальный summary</h2>
+              <p>Показывает картину отбора по сегментам и сотрудникам.</p>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <div id="summaryPanel" class="summary-grid">
+          <div class="summary-grid">
             <div class="summary-card">
               <div class="k">Загрузка</div>
               <div class="v">—</div>
@@ -749,6 +846,23 @@
             </div>
           </div>
 
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-head">
+                <h3>Сегменты в отборе</h3>
+                <span>круговая диаграмма</span>
+              </div>
+              <div class="chart-wrap"><canvas id="segmentChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-head">
+                <h3>Сотрудники в выдаче</h3>
+                <span>топ по объёму</span>
+              </div>
+              <div class="chart-wrap"><canvas id="employeeChart"></canvas></div>
+            </div>
+          </div>
+
           <div id="summaryLines" class="summary-lines"></div>
           <div id="status" class="status">Загрузите базу, затем настройте отбор.</div>
         </div>
@@ -763,7 +877,7 @@
         <div class="step">7</div>
         <div>
           <h2>Предпросмотр результата</h2>
-          <p>Показывает 50 строк из текущего результата с нормальными датами, суммами и телефонами.</p>
+          <p>Показывает ключевые поля с форматированными датами, суммами и телефонами.</p>
         </div>
       </div>
     </div>
@@ -785,6 +899,42 @@ const FIXED_FIELDS = {
   phone: 'Телефон'
 };
 
+const DATE_FIELDS = new Set(['Посл.комм', 'Посл.покупка', 'ДР', 'Дата коммуникации']);
+const NUMBER_FIELDS = new Set(['Общ.сумма', 'Сумма покупок за период', 'Из них сумма Прямых продаж', 'Кол-во штук товаров']);
+const DIGIT_FIELDS = new Set(['Телефон', 'Номер карты']);
+
+const PRIORITY_FIELDS = [
+  { name: 'Общ.сумма', kind: 'number' },
+  { name: 'Посл.комм', kind: 'date' },
+  { name: 'Категория', kind: 'category' },
+  { name: 'Посл.покупка', kind: 'date' },
+  { name: 'Пол', kind: 'sex' },
+  { name: 'Дата коммуникации', kind: 'date' },
+  { name: 'Сумма покупок за период', kind: 'number' },
+  { name: 'Из них сумма Прямых продаж', kind: 'number' },
+  { name: 'Кол-во штук товаров', kind: 'number' }
+];
+
+const CATEGORY_ORDER = ['VIC', 'Искра', 'Семья', 'Друзья', 'Знакомые', 'Новички'];
+
+const PREVIEW_COLUMNS = [
+  'ФИО',
+  'Телефон',
+  'Сотрудник',
+  'Категория',
+  'Номер карты',
+  'Общ.сумма',
+  'Посл.комм',
+  'Посл.покупка',
+  'ДР',
+  'Пол',
+  'Дата коммуникации',
+  'Сумма покупок за период',
+  'Из них сумма Прямых продаж',
+  'Кол-во штук товаров',
+  'Город'
+];
+
 const state = {
   rawData: [],
   columns: [],
@@ -801,12 +951,12 @@ const state = {
 const el = {
   fileInput: document.getElementById('fileInput'),
   loadInfo: document.getElementById('loadInfo'),
-  fieldInfo: document.getElementById('fieldInfo'),
+  rowCount: document.getElementById('rowCount'),
+  fixedFieldPills: document.getElementById('fixedFieldPills'),
   segmentsPanel: document.getElementById('segmentsPanel'),
   filtersPanel: document.getElementById('filtersPanel'),
   priorityPanel: document.getElementById('priorityPanel'),
   employeeRows: document.getElementById('employeeRows'),
-  summaryPanel: document.getElementById('summaryPanel'),
   summaryLines: document.getElementById('summaryLines'),
   previewWrap: document.getElementById('previewWrap'),
   status: document.getElementById('status'),
@@ -819,12 +969,15 @@ const el = {
   btnClearFilters: document.getElementById('btnClearFilters'),
   btnAddPriority: document.getElementById('btnAddPriority'),
   btnDefaultPriority: document.getElementById('btnDefaultPriority'),
-  btnLoadDemo: document.getElementById('btnLoadDemo'),
-  globalCap: document.getElementById('globalCap')
+  globalCap: document.getElementById('globalCap'),
+  segmentChart: document.getElementById('segmentChart'),
+  employeeChart: document.getElementById('employeeChart')
 };
 
-function escapeHtml(value){
-  return String(value ?? '')
+let charts = { segment: null, employee: null };
+
+function esc(v){
+  return String(v ?? '')
     .replaceAll('&','&amp;')
     .replaceAll('<','&lt;')
     .replaceAll('>','&gt;')
@@ -837,12 +990,25 @@ function setStatus(text, type=''){
   el.status.className = `status ${type}`.trim();
 }
 
+function normHeader(s){
+  return String(s ?? '')
+    .normalize('NFKC')
+    .replace(/\uFEFF/g,'')
+    .replace(/\s+/g,'')
+    .replace(/[._,-]/g,'')
+    .toLowerCase();
+}
+
 function normalizeText(v){
   return String(v ?? '').trim();
 }
 
 function isEmptyValue(v){
   return v === null || v === undefined || String(v).trim() === '';
+}
+
+function normalizeDigits(v){
+  return String(v ?? '').replace(/\D/g,'');
 }
 
 function parseNumberSmart(v){
@@ -915,14 +1081,8 @@ function formatMoneyRu(v){
   return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n)} ₽`;
 }
 
-function normalizePhone(v){
-  let digits = String(v ?? '').replace(/\D/g,'');
-  if (digits.length === 11 && digits.startsWith('8')) digits = '7' + digits.slice(1);
-  return digits;
-}
-
 function formatPhone(v){
-  const digits = normalizePhone(v);
+  const digits = normalizeDigits(v);
   if (digits.length === 11 && digits.startsWith('7')) {
     return `+7 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7,9)}-${digits.slice(9,11)}`;
   }
@@ -933,54 +1093,60 @@ function formatPhone(v){
 }
 
 function isMoneyColumn(col){
-  return /оборот|сумм|выруч|amount|money|стоим|price|revenue/i.test(col);
-}
-function isDateColumn(col){
-  return /дата|date|контакт|last.*contact|послед/i.test(col);
-}
-function isPhoneColumn(col){
-  return /тел|phone|mobile|моб/i.test(col);
+  return NUMBER_FIELDS.has(col) && col !== 'Кол-во штук товаров';
 }
 
-function findFixedColumn(name){
-  const target = name.trim().toLowerCase();
-  return state.columns.find(c => String(c).trim().toLowerCase() === target) || '';
-}
-
-function inferColumnType(col, rows){
-  const samples = rows.slice(0, 200).map(r => r[col]).filter(v => !isEmptyValue(v)).slice(0, 80);
-  if (!samples.length) return isDateColumn(col) ? 'date' : (isMoneyColumn(col) ? 'number' : 'text');
-
-  let score = { date: 0, number: 0, text: 0 };
-
-  for (const v of samples) {
-    if (isDateColumn(col) || parseDateSmart(v)) score.date++;
-    else if (isMoneyColumn(col) || parseNumberSmart(v) !== null) score.number++;
-    else score.text++;
-  }
-
-  if (score.date >= score.number && score.date >= score.text) return 'date';
-  if (score.number >= score.date && score.number >= score.text) return 'number';
+function baseFieldType(col){
+  if (DATE_FIELDS.has(col)) return 'date';
+  if (NUMBER_FIELDS.has(col)) return 'number';
+  if (DIGIT_FIELDS.has(col)) return 'digit';
   return 'text';
 }
 
-function rebuildColumnTypes(){
-  state.columnTypes = {};
-  for (const col of state.columns) {
-    state.columnTypes[col] = inferColumnType(col, state.rawData);
+function detectColumnTypes(rows, columns){
+  const types = {};
+  for (const col of columns) {
+    const explicit = baseFieldType(col);
+    if (explicit !== 'text') {
+      types[col] = explicit;
+      continue;
+    }
+
+    const samples = rows
+      .map(r => r[col])
+      .filter(v => !isEmptyValue(v))
+      .slice(0, 80);
+
+    let dateHits = 0;
+    let numberHits = 0;
+
+    for (const v of samples) {
+      if (parseDateSmart(v)) dateHits++;
+      if (parseNumberSmart(v) !== null) numberHits++;
+    }
+
+    if (dateHits >= Math.max(5, samples.length * 0.6)) types[col] = 'date';
+    else if (numberHits >= Math.max(5, samples.length * 0.7)) types[col] = 'number';
+    else types[col] = 'text';
   }
+  return types;
+}
+
+function findFixedColumn(name){
+  const n = normHeader(name);
+  return state.columns.find(c => normHeader(c) === n) || '';
 }
 
 function getFieldType(col){
-  return state.columnTypes[col] || 'text';
+  return state.columnTypes[col] || baseFieldType(col) || 'text';
 }
 
 function populateFieldSelect(select, selected){
-  select.innerHTML = state.columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  select.innerHTML = state.columns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   if (selected && state.columns.includes(selected)) select.value = selected;
 }
 
-function getOperatorOptions(type){
+function getFilterOperatorOptions(type){
   if (type === 'date') {
     return [
       ['eq', 'Равно'],
@@ -994,6 +1160,7 @@ function getOperatorOptions(type){
       ['not_empty', 'Не пусто']
     ];
   }
+
   if (type === 'number') {
     return [
       ['eq', 'Равно'],
@@ -1007,6 +1174,20 @@ function getOperatorOptions(type){
       ['not_empty', 'Не пусто']
     ];
   }
+
+  if (type === 'digit') {
+    return [
+      ['contains', 'Содержит'],
+      ['not_contains', 'Не содержит'],
+      ['eq', 'Равно'],
+      ['neq', 'Не равно'],
+      ['starts_with', 'Начинается с'],
+      ['ends_with', 'Заканчивается на'],
+      ['empty', 'Пусто'],
+      ['not_empty', 'Не пусто']
+    ];
+  }
+
   return [
     ['contains', 'Содержит'],
     ['not_contains', 'Не содержит'],
@@ -1019,23 +1200,20 @@ function getOperatorOptions(type){
   ];
 }
 
-function getDirectionOptions(type){
-  if (type === 'date') {
-    return [
-      ['desc', 'Сначала новые'],
-      ['asc', 'Сначала старые']
-    ];
-  }
-  if (type === 'number') {
-    return [
-      ['desc', 'Сначала больше'],
-      ['asc', 'Сначала меньше']
-    ];
-  }
-  return [
-    ['asc', 'А → Я'],
-    ['desc', 'Я → А']
-  ];
+function getPriorityDirectionOptions(kind){
+  if (kind === 'date') return [['desc', 'Сначала новые'], ['asc', 'Сначала старые']];
+  if (kind === 'number') return [['desc', 'Сначала больше'], ['asc', 'Сначала меньше']];
+  if (kind === 'category') return [['desc', 'VIC → Новички'], ['asc', 'Новички → VIC']];
+  if (kind === 'sex') return [['desc', 'М → Ж'], ['asc', 'Ж → М']];
+  return [['asc', 'А → Я'], ['desc', 'Я → А']];
+}
+
+function getPriorityKind(field){
+  if (field === 'Категория') return 'category';
+  if (field === 'Пол') return 'sex';
+  if (DATE_FIELDS.has(field)) return 'date';
+  if (NUMBER_FIELDS.has(field)) return 'number';
+  return 'text';
 }
 
 function segmentBucket(value){
@@ -1052,20 +1230,19 @@ function buildSegmentsPanel(){
     return;
   }
 
-  const values = new Map();
+  const map = new Map();
   for (const row of state.rawData) {
     const raw = normalizeText(row[segField]);
     const value = raw === '' ? 'Без анкеты' : raw;
-    values.set(value, (values.get(value) || 0) + 1);
+    map.set(value, (map.get(value) || 0) + 1);
   }
 
-  const entries = [...values.entries()]
-    .sort((a,b) => {
-      const ga = segmentBucket(a[0]);
-      const gb = segmentBucket(b[0]);
-      if (ga !== gb) return ga - gb;
-      return a[0].localeCompare(b[0], 'ru', { sensitivity:'base' });
-    });
+  const entries = [...map.entries()].sort((a,b) => {
+    const ba = segmentBucket(a[0]);
+    const bb = segmentBucket(b[0]);
+    if (ba !== bb) return ba - bb;
+    return a[0].localeCompare(b[0], 'ru', { sensitivity:'base' });
+  });
 
   state.selectedSegments = new Set(entries.map(([v]) => v));
 
@@ -1076,8 +1253,7 @@ function buildSegmentsPanel(){
   ]);
 
   for (const [value, count] of entries) {
-    const bucket = segmentBucket(value);
-    const group = bucket === 0 ? 'VIC' : bucket === 1 ? 'Русские сегменты' : 'Прочее';
+    const group = segmentBucket(value) === 0 ? 'VIC' : segmentBucket(value) === 1 ? 'Русские сегменты' : 'Прочее';
     groupMap.get(group).push({ value, count });
   }
 
@@ -1085,8 +1261,8 @@ function buildSegmentsPanel(){
     if (!items.length) return '';
     const total = items.reduce((sum, i) => sum + i.count, 0);
     const pills = items.map(({ value, count }) => `
-      <button type="button" class="seg-pill active" data-seg="${escapeHtml(value)}">
-        <span>${escapeHtml(value)}</span>
+      <button type="button" class="seg-pill active" data-seg="${esc(value)}">
+        <span>${esc(value)}</span>
         <span class="count">${count}</span>
       </button>
     `).join('');
@@ -1094,8 +1270,8 @@ function buildSegmentsPanel(){
     return `
       <div class="seg-group">
         <div class="seg-head">
-          <h3>${escapeHtml(group)}</h3>
-          <div class="seg-count">${total} записей</div>
+          <h3>${esc(group)}</h3>
+          <div class="seg-count">${new Intl.NumberFormat('ru-RU').format(total)} записей</div>
         </div>
         <div class="seg-pills">${pills}</div>
       </div>
@@ -1110,8 +1286,6 @@ function buildSegmentsPanel(){
       else state.selectedSegments.delete(seg);
     });
   });
-
-  setStatus(`Сегменты построены: ${state.selectedSegments.size} значений`, 'good');
 }
 
 function toggleSegments(active){
@@ -1144,13 +1318,16 @@ function addFilterRow(prefill = {}){
       </div>
       <div class="field">
         <label class="label">Значение</label>
-        <input class="filter-value1" type="text" />
+        <input class="filter-value1" type="text" inputmode="text" />
       </div>
       <div class="field filter-value2-wrap hidden">
         <label class="label">До</label>
-        <input class="filter-value2" type="text" />
+        <input class="filter-value2" type="text" inputmode="text" />
       </div>
-      <div></div>
+      <div class="field">
+        <label class="label">Тип</label>
+        <div class="type-chip filter-type-chip">текст</div>
+      </div>
     </div>
   `;
   el.filtersPanel.appendChild(row);
@@ -1159,6 +1336,7 @@ function addFilterRow(prefill = {}){
   const op = row.querySelector('.filter-op');
   const v1 = row.querySelector('.filter-value1');
   const v2 = row.querySelector('.filter-value2');
+  const typeChip = row.querySelector('.filter-type-chip');
   const removeBtn = row.querySelector('[data-remove="1"]');
 
   populateFieldSelect(field, prefill.field || state.columns[0]);
@@ -1166,26 +1344,35 @@ function addFilterRow(prefill = {}){
   function syncFilterRow(){
     const selectedField = field.value;
     const type = getFieldType(selectedField);
+    typeChip.textContent =
+      type === 'date' ? 'дата' :
+      type === 'number' ? 'число' :
+      type === 'digit' ? 'цифры' : 'текст';
 
     const currentOp = op.value;
-    op.innerHTML = getOperatorOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
-
+    op.innerHTML = getFilterOperatorOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
     if ([...op.options].some(o => o.value === currentOp)) op.value = currentOp;
     else op.value = (prefill.op && [...op.options].some(o => o.value === prefill.op)) ? prefill.op : op.options[0].value;
 
     if (type === 'date') {
       v1.type = 'date';
       v2.type = 'date';
-      v1.placeholder = '01.02.2025';
-      v2.placeholder = '31.12.2025';
-    } else if (type === 'number') {
+      v1.inputMode = 'none';
+      v2.inputMode = 'none';
+      v1.placeholder = '01.02.2026';
+      v2.placeholder = '31.12.2026';
+    } else if (type === 'number' || type === 'digit') {
       v1.type = 'text';
       v2.type = 'text';
-      v1.placeholder = '100000';
-      v2.placeholder = '200000';
+      v1.inputMode = 'numeric';
+      v2.inputMode = 'numeric';
+      v1.placeholder = type === 'digit' ? '79999999999' : '100000';
+      v2.placeholder = type === 'digit' ? '79999999999' : '200000';
     } else {
       v1.type = 'text';
       v2.type = 'text';
+      v1.inputMode = 'text';
+      v2.inputMode = 'text';
       v1.placeholder = 'Текст';
       v2.placeholder = 'Текст';
     }
@@ -1224,21 +1411,32 @@ function addPriorityRow(prefill = {}){
         <label class="label">Порядок</label>
         <select class="priority-dir"></select>
       </div>
-      <div></div>
+      <div class="field">
+        <label class="label">Тип</label>
+        <div class="type-chip priority-type-chip">текст</div>
+      </div>
     </div>
   `;
   el.priorityPanel.appendChild(row);
 
   const field = row.querySelector('.priority-field');
   const dir = row.querySelector('.priority-dir');
+  const typeChip = row.querySelector('.priority-type-chip');
   const removeBtn = row.querySelector('[data-remove="1"]');
 
-  populateFieldSelect(field, prefill.field || state.columns[0]);
+  field.innerHTML = PRIORITY_FIELDS.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if (prefill.field) field.value = prefill.field;
 
   function syncPriorityRow(){
-    const type = getFieldType(field.value);
+    const kind = getPriorityKind(field.value);
+    typeChip.textContent =
+      kind === 'date' ? 'дата' :
+      kind === 'number' ? 'число' :
+      kind === 'category' ? 'категория' :
+      kind === 'sex' ? 'пол' : 'текст';
+
     const currentDir = dir.value || prefill.dir || '';
-    dir.innerHTML = getDirectionOptions(type).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
+    dir.innerHTML = getPriorityDirectionOptions(kind).map(([val, label]) => `<option value="${val}">${label}</option>`).join('');
     if ([...dir.options].some(o => o.value === currentDir)) dir.value = currentDir;
   }
 
@@ -1259,31 +1457,20 @@ function renumberRules(container, selector){
   });
 }
 
-function clearFilterRows(){
-  el.filtersPanel.innerHTML = '';
-}
-
-function clearPriorityRows(){
-  el.priorityPanel.innerHTML = '';
-}
+function clearFilterRows(){ el.filtersPanel.innerHTML = ''; }
+function clearPriorityRows(){ el.priorityPanel.innerHTML = ''; }
 
 function setDefaultPriorityRows(){
   clearPriorityRows();
-
-  const lastContact = state.columns.find(c => /дата.*контакт|послед.*контакт/i.test(c)) || '';
-  const turnover = state.columns.find(c => /оборот|сумм|выруч/i.test(c)) || '';
-
   const defaults = [];
-  if (lastContact) defaults.push({ field: lastContact, dir: 'asc' });
-  if (turnover && turnover !== lastContact) defaults.push({ field: turnover, dir: 'desc' });
+  if (state.columns.includes('Посл.комм')) defaults.push({ field: 'Посл.комм', dir: 'desc' });
+  if (state.columns.includes('Общ.сумма')) defaults.push({ field: 'Общ.сумма', dir: 'desc' });
   if (!defaults.length && state.columns[0]) defaults.push({ field: state.columns[0], dir: 'asc' });
-
   defaults.forEach(d => addPriorityRow(d));
 }
 
 function readFiltersFromUI(){
-  const rows = [...el.filtersPanel.querySelectorAll('.filter-rule')];
-  return rows.map(row => ({
+  return [...el.filtersPanel.querySelectorAll('.filter-rule')].map(row => ({
     field: row.querySelector('.filter-field').value,
     operator: row.querySelector('.filter-op').value,
     value1: row.querySelector('.filter-value1').value,
@@ -1293,11 +1480,10 @@ function readFiltersFromUI(){
 }
 
 function readPriorityFromUI(){
-  const rows = [...el.priorityPanel.querySelectorAll('.priority-rule')];
-  return rows.map(row => ({
+  return [...el.priorityPanel.querySelectorAll('.priority-rule')].map(row => ({
     field: row.querySelector('.priority-field').value,
     dir: row.querySelector('.priority-dir').value || 'desc',
-    type: getFieldType(row.querySelector('.priority-field').value)
+    kind: getPriorityKind(row.querySelector('.priority-field').value)
   })).filter(r => r.field);
 }
 
@@ -1310,23 +1496,21 @@ function matchesFilter(row, f){
 
   if (type === 'date') {
     const rowDate = parseDateSmart(raw);
-    const v1 = parseDateSmart(f.value1);
-    const v2 = parseDateSmart(f.value2);
-
+    const a = parseDateSmart(f.value1);
+    const b = parseDateSmart(f.value2);
     if (!rowDate) return false;
-    if (!v1 && !['empty','not_empty'].includes(f.operator)) return false;
 
     const t = rowDate.getTime();
-    const a = v1 ? v1.getTime() : null;
-    const b = v2 ? v2.getTime() : null;
+    const ta = a ? a.getTime() : null;
+    const tb = b ? b.getTime() : null;
 
-    if (f.operator === 'eq') return a !== null && t === a;
-    if (f.operator === 'neq') return a !== null && t !== a;
-    if (f.operator === 'gt') return a !== null && t > a;
-    if (f.operator === 'gte') return a !== null && t >= a;
-    if (f.operator === 'lt') return a !== null && t < a;
-    if (f.operator === 'lte') return a !== null && t <= a;
-    if (f.operator === 'between') return a !== null && b !== null && t >= Math.min(a,b) && t <= Math.max(a,b);
+    if (f.operator === 'eq') return ta !== null && t === ta;
+    if (f.operator === 'neq') return ta !== null && t !== ta;
+    if (f.operator === 'gt') return ta !== null && t > ta;
+    if (f.operator === 'gte') return ta !== null && t >= ta;
+    if (f.operator === 'lt') return ta !== null && t < ta;
+    if (f.operator === 'lte') return ta !== null && t <= ta;
+    if (f.operator === 'between') return ta !== null && tb !== null && t >= Math.min(ta, tb) && t <= Math.max(ta, tb);
     return true;
   }
 
@@ -1342,53 +1526,104 @@ function matchesFilter(row, f){
     if (f.operator === 'gte') return a !== null && num >= a;
     if (f.operator === 'lt') return a !== null && num < a;
     if (f.operator === 'lte') return a !== null && num <= a;
-    if (f.operator === 'between') return a !== null && b !== null && num >= Math.min(a,b) && num <= Math.max(a,b);
+    if (f.operator === 'between') return a !== null && b !== null && num >= Math.min(a, b) && num <= Math.max(a, b);
+    return true;
+  }
+
+  if (type === 'digit') {
+    const rawDigits = normalizeDigits(raw);
+    const a = normalizeDigits(f.value1);
+    const b = normalizeDigits(f.value2);
+
+    if (f.operator === 'contains') return rawDigits.includes(a);
+    if (f.operator === 'not_contains') return !rawDigits.includes(a);
+    if (f.operator === 'eq') return rawDigits === a;
+    if (f.operator === 'neq') return rawDigits !== a;
+    if (f.operator === 'starts_with') return rawDigits.startsWith(a);
+    if (f.operator === 'ends_with') return rawDigits.endsWith(a);
+    if (f.operator === 'between') return a !== '' && b !== '' && rawDigits >= (a < b ? a : b) && rawDigits <= (a > b ? a : b);
     return true;
   }
 
   const text = String(raw ?? '').toLowerCase().trim();
-  const v1 = String(f.value1 ?? '').toLowerCase().trim();
-  const v2 = String(f.value2 ?? '').toLowerCase().trim();
+  const a = String(f.value1 ?? '').toLowerCase().trim();
+  const b = String(f.value2 ?? '').toLowerCase().trim();
 
-  if (f.operator === 'contains') return text.includes(v1);
-  if (f.operator === 'not_contains') return !text.includes(v1);
-  if (f.operator === 'eq') return text === v1;
-  if (f.operator === 'neq') return text !== v1;
-  if (f.operator === 'starts_with') return text.startsWith(v1);
-  if (f.operator === 'ends_with') return text.endsWith(v1);
+  if (f.operator === 'contains') return text.includes(a);
+  if (f.operator === 'not_contains') return !text.includes(a);
+  if (f.operator === 'eq') return text === a;
+  if (f.operator === 'neq') return text !== a;
+  if (f.operator === 'starts_with') return text.startsWith(a);
+  if (f.operator === 'ends_with') return text.endsWith(a);
   if (f.operator === 'between') {
-    const s = text.localeCompare(v1, 'ru');
-    const e = text.localeCompare(v2, 'ru');
+    const s = text.localeCompare(a, 'ru');
+    const e = text.localeCompare(b, 'ru');
     return s >= 0 && e <= 0;
   }
   return true;
 }
 
+function compareCategory(a, b, dir){
+  const pa = String(a ?? '').split('_')[0] || '';
+  const pb = String(b ?? '').split('_')[0] || '';
+  const ra = CATEGORY_ORDER.indexOf(pa);
+  const rb = CATEGORY_ORDER.indexOf(pb);
+  const rankA = ra === -1 ? 999 : ra;
+  const rankB = rb === -1 ? 999 : rb;
+
+  if (rankA !== rankB) {
+    return dir === 'asc' ? (rankB - rankA) : (rankA - rankB);
+  }
+  const cmp = String(a ?? '').localeCompare(String(b ?? ''), 'ru', { sensitivity:'base' });
+  return dir === 'asc' ? -cmp : cmp;
+}
+
+function compareSex(a, b, dir){
+  const norm = v => {
+    const x = String(v ?? '').trim().toUpperCase();
+    if (x.startsWith('М')) return 0;
+    if (x.startsWith('Ж')) return 1;
+    return 9;
+  };
+  const ra = norm(a);
+  const rb = norm(b);
+  if (ra !== rb) {
+    return dir === 'asc' ? (rb - ra) : (ra - rb);
+  }
+  return 0;
+}
+
 function compareRowsByPriority(a, b, rules){
   for (const r of rules) {
-    const type = r.type;
     const va = a[r.field];
     const vb = b[r.field];
 
     let cmp = 0;
 
-    if (type === 'date') {
+    if (r.kind === 'date') {
       const da = parseDateSmart(va);
       const db = parseDateSmart(vb);
       const ta = da ? da.getTime() : -Infinity;
       const tb = db ? db.getTime() : -Infinity;
       cmp = ta < tb ? -1 : ta > tb ? 1 : 0;
-    } else if (type === 'number') {
+      if (cmp !== 0) cmp = r.dir === 'asc' ? -cmp : cmp;
+    } else if (r.kind === 'number') {
       const na = parseNumberSmart(va);
       const nb = parseNumberSmart(vb);
       const ta = na === null ? -Infinity : na;
       const tb = nb === null ? -Infinity : nb;
       cmp = ta < tb ? -1 : ta > tb ? 1 : 0;
+      if (cmp !== 0) cmp = r.dir === 'asc' ? -cmp : cmp;
+    } else if (r.kind === 'category') {
+      cmp = compareCategory(va, vb, r.dir);
+    } else if (r.kind === 'sex') {
+      cmp = compareSex(va, vb, r.dir);
     } else {
       cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'ru', { sensitivity:'base' });
+      if (cmp !== 0) cmp = r.dir === 'asc' ? -cmp : cmp;
     }
 
-    if (cmp !== 0) return r.dir === 'asc' ? cmp : -cmp;
+    if (cmp !== 0) return cmp;
   }
   return (a.__idx || 0) - (b.__idx || 0);
 }
@@ -1398,23 +1633,18 @@ function buildWhy(row, rules){
   return rules.map((r, i) => {
     const val = row[r.field];
     const nice = formatForDisplay(val, r.field);
-    const dirText = directionText(r.type, r.dir);
+    const dirText = getPriorityDirectionOptions(r.kind).find(x => x[0] === r.dir)?.[1] || r.dir;
     return `${i+1}) ${r.field}: ${nice} (${dirText})`;
   }).join(' • ');
 }
 
-function directionText(type, dir){
-  if (type === 'date') return dir === 'asc' ? 'сначала старые' : 'сначала новые';
-  if (type === 'number') return dir === 'asc' ? 'сначала меньше' : 'сначала больше';
-  return dir === 'asc' ? 'А → Я' : 'Я → А';
-}
-
 function formatForDisplay(v, col){
   if (v === null || v === undefined || v === '') return '';
-  if (isPhoneColumn(col)) return formatPhone(v);
-  if (isDateColumn(col) || getFieldType(col) === 'date') return formatDateDDMMYYYY(v);
+  if (col === 'Телефон') return formatPhone(v);
+  if (col === 'Номер карты') return normalizeDigits(v);
+  if (DATE_FIELDS.has(col) || getFieldType(col) === 'date') return formatDateDDMMYYYY(v);
   if (isMoneyColumn(col)) return formatMoneyRu(v);
-  if (getFieldType(col) === 'number') return formatNumberRu(v);
+  if (NUMBER_FIELDS.has(col)) return formatNumberRu(v);
   return String(v);
 }
 
@@ -1479,22 +1709,22 @@ function buildEmployeePanel(){
   el.employeeRows.innerHTML = order.map(({ name, count }) => {
     const initial = Math.min(count, cap);
     return `
-      <div class="employee-row" data-employee="${escapeHtml(name)}" data-found="${count}">
+      <div class="employee-row" data-employee="${esc(name)}" data-found="${count}">
         <div>
-          <div class="employee-name">${escapeHtml(name)}</div>
+          <div class="employee-name">${esc(name)}</div>
           <div class="employee-meta">Найдено: ${new Intl.NumberFormat('ru-RU').format(count)} записей</div>
         </div>
-        <div class="tiny-toggle">${new Intl.NumberFormat('ru-RU').format(count)}</div>
+        <div class="toggle-pill">${new Intl.NumberFormat('ru-RU').format(count)}</div>
         <div>
           <input class="quota-input" type="number" min="0" max="${initial}" value="${initial}" />
         </div>
-        <div class="tiny-toggle" style="padding:0 10px;">
-          <label style="display:flex; align-items:center; gap:8px; width:100%; justify-content:center; cursor:pointer;">
-            <input class="exclude-check" type="checkbox" style="width:18px; height:18px; margin:0;" />
+        <div class="toggle-pill" style="padding:0 10px;">
+          <label>
+            <input class="exclude-check" type="checkbox" />
             <span>Нет</span>
           </label>
         </div>
-        <div style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:-4px; color:var(--muted2); font-size:12px; font-weight:800;">
+        <div style="grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:-4px; color:var(--muted2); font-size:12px; font-weight:800;">
           <span>Можно уменьшить вручную или исключить сотрудника.</span>
           <span class="take-preview">К выдаче: ${initial}</span>
         </div>
@@ -1539,8 +1769,8 @@ function readEmployeePlan(){
 function getSelectedSegmentsText(){
   if (!state.selectedSegments.size) return 'ничего не выбрано';
   const arr = [...state.selectedSegments];
-  const shown = arr.slice(0, 8).map(escapeHtml).join(', ');
-  return arr.length > 8 ? `${shown} … и ещё ${arr.length - 8}` : shown;
+  const shown = arr.slice(0, 10).map(esc).join(', ');
+  return arr.length > 10 ? `${shown} … и ещё ${arr.length - 10}` : shown;
 }
 
 function getFilterSummaryText(){
@@ -1568,14 +1798,17 @@ function getFilterSummaryText(){
       not_empty: 'не пусто'
     }[f.operator] || f.operator;
 
-    return `${escapeHtml(f.field)} ${opText} ${escapeHtml(valueText)}`;
+    return `${esc(f.field)} ${opText} ${esc(valueText)}`;
   }).join(' • ');
 }
 
 function getPrioritySummaryText(){
   const rules = readPriorityFromUI();
   if (!rules.length) return 'без дополнительных критериев';
-  return rules.map((r, i) => `${i+1}) ${escapeHtml(r.field)} — ${escapeHtml(directionText(r.type, r.dir))}`).join(' • ');
+  return rules.map((r, i) => {
+    const label = getPriorityDirectionOptions(r.kind).find(x => x[0] === r.dir)?.[1] || r.dir;
+    return `${i+1}) ${esc(r.field)} — ${esc(label)}`;
+  }).join(' • ');
 }
 
 function getEmployeeSummaryText(stage){
@@ -1590,14 +1823,14 @@ function getEmployeeSummaryText(stage){
     return state.employeeOrder.map(name => {
       const selected = countByEmp.get(name) || 0;
       const requested = plannedMap.get(name) || 0;
-      return `${escapeHtml(name)} — ${selected} из ${requested} (потолок ${cap})`;
+      return `${esc(name)} — ${selected} из ${requested} (потолок ${cap})`;
     }).join('<br>');
   }
 
   const countByEmp = groupCount(state.candidateRows, state.fields.employee);
   return state.employeeOrder.map(name => {
     const found = countByEmp.get(name) || 0;
-    return `${escapeHtml(name)} — найдено ${found}, потолок ${cap}`;
+    return `${esc(name)} — найдено ${found}, потолок ${cap}`;
   }).join('<br>');
 }
 
@@ -1616,39 +1849,17 @@ function renderSummary(stage){
   const final = state.finalRows.length;
   const employees = state.employeeOrder.length;
 
-  el.summaryPanel.innerHTML = `
-    <div class="summary-card">
-      <div class="k">Загрузка</div>
-      <div class="v">${loaded ? new Intl.NumberFormat('ru-RU').format(loaded) : '—'}</div>
-      <div class="s">строк в базе</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Подошло</div>
-      <div class="v">${candidate ? new Intl.NumberFormat('ru-RU').format(candidate) : '—'}</div>
-      <div class="s">после сегментов и условий</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Выгрузка</div>
-      <div class="v">${final ? new Intl.NumberFormat('ru-RU').format(final) : '—'}</div>
-      <div class="s">финальных номеров</div>
-    </div>
-    <div class="summary-card">
-      <div class="k">Сотрудники</div>
-      <div class="v">${employees ? employees : '—'}</div>
-      <div class="s">по текущему пулу</div>
-    </div>
-  `;
-
-  const segSummary = getSelectedSegmentsText();
-  const filterSummary = getFilterSummaryText();
-  const prioritySummary = getPrioritySummaryText();
-  const empSummary = getEmployeeSummaryText(stage);
+  const cards = document.querySelectorAll('.summary-card');
+  if (cards[0]) cards[0].querySelector('.v').textContent = loaded ? new Intl.NumberFormat('ru-RU').format(loaded) : '—';
+  if (cards[1]) cards[1].querySelector('.v').textContent = candidate ? new Intl.NumberFormat('ru-RU').format(candidate) : '—';
+  if (cards[2]) cards[2].querySelector('.v').textContent = final ? new Intl.NumberFormat('ru-RU').format(final) : '—';
+  if (cards[3]) cards[3].querySelector('.v').textContent = employees ? String(employees) : '—';
 
   el.summaryLines.innerHTML = `
-    <div class="summary-line"><b>Сегменты:</b> ${segSummary}</div>
-    <div class="summary-line"><b>Условия:</b> ${filterSummary}</div>
-    <div class="summary-line"><b>Приоритет:</b> ${prioritySummary}</div>
-    <div class="summary-line"><b>По сотрудникам:</b><br>${empSummary}</div>
+    <div class="summary-line"><b>Сегменты:</b> ${getSelectedSegmentsText()}</div>
+    <div class="summary-line"><b>Условия:</b> ${getFilterSummaryText()}</div>
+    <div class="summary-line"><b>Приоритет:</b> ${getPrioritySummaryText()}</div>
+    <div class="summary-line"><b>По сотрудникам:</b><br>${getEmployeeSummaryText(stage)}</div>
   `;
 }
 
@@ -1658,25 +1869,139 @@ function renderPreview(rows, mode){
     return;
   }
 
-  const baseColumns = state.columns;
-  const columns = mode === 'final' ? [...baseColumns, 'Причина отбора'] : baseColumns;
+  const columns = PREVIEW_COLUMNS.filter(c => state.columns.includes(c));
+  const finalCols = mode === 'final' ? [...columns, 'Причина отбора'] : columns;
 
-  let html = `<table><thead><tr>${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
+  let html = `<table><thead><tr>${finalCols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>`;
 
   const previewRows = rows.slice(0, 50);
   for (const row of previewRows) {
     html += '<tr>';
-    for (const col of baseColumns) {
-      html += `<td>${escapeHtml(formatForDisplay(row[col], col))}</td>`;
+    for (const col of columns) {
+      html += `<td>${esc(formatForDisplay(row[col], col))}</td>`;
     }
     if (mode === 'final') {
-      html += `<td>${escapeHtml(row.__why || '')}</td>`;
+      html += `<td>${esc(row.__why || '')}</td>`;
     }
     html += '</tr>';
   }
 
   html += '</tbody></table>';
   el.previewWrap.innerHTML = html;
+}
+
+function makeChartData(rows, field, topN = 8){
+  const map = new Map();
+  for (const row of rows) {
+    const key = normalizeText(row[field]) || 'Без значения';
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+
+  const entries = [...map.entries()]
+    .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru', { sensitivity:'base' }));
+
+  const top = entries.slice(0, topN);
+  const other = entries.slice(topN).reduce((s, [,v]) => s + v, 0);
+
+  const labels = top.map(x => x[0]);
+  const values = top.map(x => x[1]);
+
+  if (other > 0) {
+    labels.push('Прочее');
+    values.push(other);
+  }
+
+  return { labels, values };
+}
+
+function destroyChart(chart){
+  if (chart) chart.destroy();
+}
+
+function updateCharts(){
+  const segField = state.fields.segment;
+  const empField = state.fields.employee;
+
+  const segmentBase = state.candidateRows.length ? state.candidateRows : state.rawData;
+  const employeeBase = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
+
+  const segData = segmentBase.length && segField ? makeChartData(segmentBase, segField, 8) : { labels: ['Нет данных'], values: [1] };
+  const empData = employeeBase.length && empField ? makeChartData(employeeBase, empField, 8) : { labels: ['Нет данных'], values: [1] };
+
+  destroyChart(charts.segment);
+  destroyChart(charts.employee);
+
+  charts.segment = new Chart(el.segmentChart, {
+    type: 'doughnut',
+    data: {
+      labels: segData.labels,
+      datasets: [{
+        data: segData.values,
+        borderWidth: 0,
+        hoverOffset: 8,
+        backgroundColor: ['#ef6f2e','#ff8a4a','#f3a86b','#d95c22','#c85a31','#ffb27a','#a96b55','#8d5a4a','#6f4d43']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#fff',
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 14,
+            boxWidth: 10
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${new Intl.NumberFormat('ru-RU').format(ctx.parsed)}`
+          }
+        }
+      }
+    }
+  });
+
+  charts.employee = new Chart(el.employeeChart, {
+    type: 'bar',
+    data: {
+      labels: empData.labels,
+      datasets: [{
+        label: 'Записей',
+        data: empData.values,
+        borderWidth: 0,
+        backgroundColor: '#ef6f2e',
+        borderRadius: 12,
+        maxBarThickness: 30
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${new Intl.NumberFormat('ru-RU').format(ctx.parsed.x)} записей`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#ddd' },
+          grid: { color: 'rgba(255,255,255,.08)' }
+        },
+        y: {
+          ticks: { color: '#fff', font: { weight: '700' } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
 }
 
 function analyze(){
@@ -1714,16 +2039,17 @@ function analyze(){
   buildEmployeePanel();
   renderSummary('analysis');
   renderPreview(candidates, 'candidate');
+  updateCharts();
 
   el.btnBuildFinal.disabled = false;
   el.btnExport.disabled = true;
 
-  setStatus(`Отбор посчитан. Подошло ${new Intl.NumberFormat('ru-RU').format(candidates.length)} строк. Теперь можно задать квоты.`, 'good');
+  setStatus(`Отбор посчитан. Подошло ${new Intl.NumberFormat('ru-RU').format(candidates.length)} строк. Теперь задайте квоты.`, 'good');
 }
 
 function buildFinal(){
   if (!state.candidateRows.length) {
-    setStatus('Сначала посчитай отбор.', 'warn');
+    setStatus('Сначала посчитайте отбор.', 'warn');
     return;
   }
 
@@ -1758,6 +2084,7 @@ function buildFinal(){
 
   renderSummary('final');
   renderPreview(final, 'final');
+  updateCharts();
 
   el.btnExport.disabled = final.length === 0;
   setStatus(`Итог собран. В выгрузке ${new Intl.NumberFormat('ru-RU').format(final.length)} номеров.`, 'good');
@@ -1765,7 +2092,7 @@ function buildFinal(){
 
 function exportPhones(){
   if (!state.finalRows.length) {
-    setStatus('Сначала собери итог.', 'warn');
+    setStatus('Сначала соберите итог.', 'warn');
     return;
   }
 
@@ -1776,7 +2103,7 @@ function exportPhones(){
   }
 
   const phones = state.finalRows
-    .map(r => normalizePhone(r[phoneField]))
+    .map(r => normalizeDigits(r[phoneField]))
     .filter(v => v.length >= 10);
 
   const unique = [...new Set(phones)];
@@ -1806,6 +2133,17 @@ function applyDefaultsAfterLoad(){
   buildEmployeePanel();
   renderSummary('analysis');
   renderPreview([], 'candidate');
+  updateCharts();
+}
+
+function setFixedPillsState(okMap){
+  el.fixedFieldPills.querySelectorAll('.mini-pill').forEach(p => {
+    const key = p.dataset.key;
+    const ok = !!okMap[key];
+    p.classList.remove('ok', 'bad', 'warn', 'accent');
+    p.classList.add(ok ? 'ok' : 'bad');
+    p.textContent = `${key} — ${ok ? 'OK' : 'не найдено'}`;
+  });
 }
 
 function loadFile(file){
@@ -1816,47 +2154,48 @@ function loadFile(file){
       let workbook;
       const isCsv = /\.csv$/i.test(file.name);
 
-      if (isCsv) {
-        workbook = XLSX.read(evt.target.result, { type: 'string' });
-      } else {
-        workbook = XLSX.read(evt.target.result, { type: 'array' });
-      }
+      if (isCsv) workbook = XLSX.read(evt.target.result, { type: 'string', raw: true });
+      else workbook = XLSX.read(evt.target.result, { type: 'array', cellDates: true, raw: true });
 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
+      let rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: true });
       rows = rows.map((r, idx) => ({ __idx: idx + 1, ...r }));
 
       state.rawData = rows;
       state.columns = Object.keys(rows[0] || {}).filter(c => c !== '__idx');
-      rebuildColumnTypes();
+      state.columnTypes = detectColumnTypes(rows, state.columns);
 
       const seg = findFixedColumn(FIXED_FIELDS.segment);
       const emp = findFixedColumn(FIXED_FIELDS.employee);
       const phone = findFixedColumn(FIXED_FIELDS.phone);
 
-      if (!seg || !emp || !phone) {
-        state.loaded = false;
-        el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
-        el.fieldInfo.textContent = 'Не найдены обязательные поля';
-        setStatus('В файле должны быть столбцы: Категория, Сотрудник, Телефон.', 'bad');
-        el.btnAnalyze.disabled = true;
-        el.btnBuildFinal.disabled = true;
-        el.btnExport.disabled = true;
-        return;
-      }
-
       state.fields.segment = seg;
       state.fields.employee = emp;
       state.fields.phone = phone;
 
-      el.loadInfo.textContent = `Загружено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}`;
-      el.fieldInfo.textContent = `Категория • Сотрудник • Телефон`;
-      state.loaded = true;
+      const okMap = {
+        'Категория': !!seg,
+        'Сотрудник': !!emp,
+        'Телефон': !!phone
+      };
+      setFixedPillsState(okMap);
 
+      el.rowCount.textContent = `${new Intl.NumberFormat('ru-RU').format(rows.length)} строк`;
+      el.loadInfo.textContent = `Файл загружен: ${file.name}`;
+
+      if (!seg || !emp || !phone) {
+        state.loaded = false;
+        setStatus('В файле должны быть столбцы: Категория, Сотрудник, Телефон.', 'bad');
+        el.btnAnalyze.disabled = true;
+        el.btnBuildFinal.disabled = true;
+        el.btnExport.disabled = true;
+        renderSummary('analysis');
+        return;
+      }
+
+      state.loaded = true;
       buildSegmentsPanel();
       applyDefaultsAfterLoad();
-
       setStatus(`Файл загружен. Найдено строк: ${new Intl.NumberFormat('ru-RU').format(rows.length)}.`, 'good');
     } catch (err) {
       console.error(err);
@@ -1891,10 +2230,6 @@ function wireUp(){
   el.btnBuildFinal.addEventListener('click', buildFinal);
   el.btnExport.addEventListener('click', exportPhones);
 
-  el.btnLoadDemo.addEventListener('click', () => {
-    setStatus('1) загрузили файл → 2) выбрали сегменты → 3) задали условия → 4) настроили приоритет → 5) задали квоты → 6) выгрузили телефоны.', 'good');
-  });
-
   el.globalCap.addEventListener('input', () => {
     if (state.candidateRows.length) {
       syncEmployeeCapUI();
@@ -1905,6 +2240,7 @@ function wireUp(){
 
 wireUp();
 renderSummary('analysis');
+updateCharts();
 </script>
 </body>
 </html>
