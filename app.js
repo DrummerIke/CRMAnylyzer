@@ -14,7 +14,8 @@
     loaded:false,
     filtersApplied: false, // флаг: применялись ли фильтры
     sortCriteria: [],
-    virtualRowsLimit: 80
+    virtualRowsLimit: 80,
+    employeeSort: 'name_asc'
   };
 
   const EMP_COLORS   = ['#f37021','#d95c22','#8d5a4a','#f3a86b','#5a3d36','#ff8a4a'];
@@ -446,16 +447,29 @@
     }
     const map=new Map();
     state.candidateRows.forEach(r=>{const n=String(r[state.employeeField]??'').trim()||'—';if(!map.has(n))map.set(n,[]);map.get(n).push(r);});
-    state.employees=Array.from(map).map(([name,rows])=>({name,found:rows.length,quota:Math.min(rows.length,state.employeeCap),excluded:false})).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+    state.employees=Array.from(map).map(([name,rows])=>({name,found:rows.length,quota:Math.min(rows.length,state.employeeCap),excluded:false}));
+    sortEmployees();
     renderEmployeesPanel();
     updateAll();
+  }
+
+
+  function sortEmployees(){
+    const byName=(a,b)=>a.name.localeCompare(b.name,'ru');
+    const byCount=(a,b)=>b.found-a.found;
+    switch(state.employeeSort){
+      case 'name_desc': state.employees.sort((a,b)=>-byName(a,b)); break;
+      case 'tasks_desc': state.employees.sort((a,b)=>byCount(a,b)||byName(a,b)); break;
+      case 'tasks_asc': state.employees.sort((a,b)=>(a.found-b.found)||byName(a,b)); break;
+      default: state.employees.sort(byName);
+    }
   }
 
   function renderEmployeesPanel(){
     let html='<div class="bcard"><div class="bcard-hdr"><div class="flex items-center gap-2"><div class="step-badge">4</div><span class="font-bold" style="font-size:14px;">Распределение</span></div></div>'
       +'<div class="bcard-body"><div class="emp-controls">'
       +'<div class="cap-wrap"><span class="text-sm text-muted">Лимит:</span><input type="range" min="1" max="500" value="'+state.employeeCap+'" id="capSlider" class="cap-slider"><span class="cap-val" id="capVal">'+state.employeeCap+'</span></div>'
-      +'<div class="flex gap-2"><button class="btn btn-ghost btn-sm" id="btnEq">⚖️ Поровну</button><button class="btn btn-ghost btn-sm" id="btnFill">🎯 Заполнить</button></div>'
+      +'<div class="flex gap-2 items-center"><label class="text-xs text-muted">Сортировка:</label><select class="select" id="empSort" style="width:auto;min-width:180px;font-size:12px;"><option value="name_asc">ФИО A→Я</option><option value="name_desc">ФИО Я→A</option><option value="tasks_desc">По задачам ↓</option><option value="tasks_asc">По задачам ↑</option></select><button class="btn btn-ghost btn-sm" id="btnEq">⚖️ Поровну</button><button class="btn btn-ghost btn-sm" id="btnFill">🎯 Заполнить</button></div>'
       +'</div><div class="emp-list" id="empList">';
 
     state.employees.forEach((emp,i)=>{
@@ -472,6 +486,8 @@
     getPanel('employees').innerHTML=html;
 
     const slider=document.getElementById('capSlider'),capValEl=document.getElementById('capVal');
+    const empSort=document.getElementById('empSort');
+    if(empSort){ empSort.value=state.employeeSort; empSort.addEventListener('change',()=>{ state.employeeSort=empSort.value; sortEmployees(); renderEmployeesPanel();}); }
     slider.addEventListener('input',()=>{
       state.employeeCap=parseInt(slider.value);capValEl.textContent=state.employeeCap;
       state.employees.forEach(e=>{if(!e.excluded)e.quota=Math.min(e.found,state.employeeCap);});
@@ -495,6 +511,13 @@
     }
 
     qa('#empList .emp-item').forEach(item=>{
+      item.addEventListener('dblclick',()=>{
+        const idx=parseInt(item.dataset.idx);
+        const emp=state.employees[idx];
+        const rows=state.candidateRows.filter(r=>(String(r[state.employeeField]??'').trim()||'—')===emp.name);
+        const cols=state.columns.length?state.columns:(rows[0]?Object.keys(rows[0]):[]);
+        openModal('👤 '+emp.name+' • '+fmt(rows.length)+' строк', '<table class="modal-table"><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.slice(0,500).map(r=>'<tr>'+cols.map(c=>'<td>'+esc(String(r[c]??''))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+(cols.length||1)+'" style="text-align:center;padding:18px;color:var(--text-muted);">Нет данных</td></tr>')+'</tbody></table>');
+      });
       const idx=parseInt(item.dataset.idx);
       const inp=item.querySelector('.eq-inp'),ex=item.querySelector('.emp-exclude');
       const bar=item.querySelector('.emp-bar-fill'),lbl=item.querySelector('.emp-quota-lbl');

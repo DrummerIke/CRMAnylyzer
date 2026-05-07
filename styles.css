@@ -314,7 +314,7 @@
     .chart-wrap-scroll { max-height: 250px; overflow-y: auto; }
 
     /* PREVIEW */
-    .preview-wrap { max-height: 340px; overflow: auto; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+    .preview-wrap { max-height: 420px; overflow: auto; border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
     .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .preview-table th {
       padding: 8px 11px; text-align: left; font-weight: 700; font-size: 10px;
@@ -354,7 +354,7 @@
     .modal {
       background: var(--bg-card-deep); border: 1px solid var(--glass-border);
       border-radius: var(--radius-xl); box-shadow: var(--shadow-modal);
-      width: 92vw; max-width: 980px; max-height: 88vh;
+      width: 96vw; max-width: 1400px; max-height: 88vh;
       display: flex; flex-direction: column; animation: modalIn 0.2s ease;
     }
     @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
