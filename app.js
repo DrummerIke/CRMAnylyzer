@@ -90,7 +90,7 @@
     const phones = new Set(state.finalRows.map(r=>normPhone(r[state.phoneField])).filter(v=>v.length>=10));
     q('#expPhones').textContent = phones.size ? fmt(phones.size) : '—';
     q('#expEmployees').textContent = activeEmps||'—';
-    const can = state.finalRows.length>0;
+    const can = state.finalRows.length>0 || state.candidateRows.length>0;
     q('#btnExport').disabled = !can;
     q('#btnExportTop').disabled = !can;
     q('#btnExportXlsx').disabled = !can;
@@ -136,8 +136,9 @@
       data:{labels:sData.labels,datasets:[{data:sData.values,backgroundColor:CHART_COLORS,borderWidth:0,borderRadius:3}]},
       options:{animation:false,responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'rgba(255,255,255,0.45)',font:{size:10},boxWidth:9,padding:9}}}}
     });
-    const eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
+    const eBase = state.finalRows.length ? state.finalRows : (state.candidateRows.length ? state.candidateRows : state.rawData);
     const eData = makeEmpData(eBase, state.employeeField);
+    if(!eData.labels.length){eData.labels=['Нет данных'];eData.values=[0];}
     const ew = q('#empChartWrap');
     ew.style.height = Math.max(150,eData.labels.length*27+38)+'px';
     if(charts.emp) charts.emp.destroy();
@@ -558,7 +559,7 @@
     openModal('👥 Сотрудники','<div style="overflow-y:auto;max-height:60vh;"><div id="mEW" style="height:280px;"><canvas id="mEC"></canvas></div></div>');
     setTimeout(()=>{
       const ctx=document.getElementById('mEC')?.getContext('2d');const wrap=document.getElementById('mEW');if(!ctx||!wrap)return;
-      const d=makeEmpData(state.finalRows.length?state.finalRows:state.candidateRows,state.employeeField);
+      const d=makeEmpData(state.finalRows.length?state.finalRows:(state.candidateRows.length?state.candidateRows:state.rawData),state.employeeField);
       wrap.style.height=Math.max(280,d.labels.length*30+48)+'px';
       new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:d.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4}]},options:{animation:false,parsing:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.4)'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'rgba(255,255,255,0.7)'},grid:{display:false}}}}});
     },100);
@@ -660,8 +661,9 @@
   /* ===== EXPORT ===== */
   qa('#btnExport, #btnExportTop').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(!state.finalRows.length) return toast('Соберите итог сначала','warning');
-      const phones=[...new Set(state.finalRows.map(r=>normPhone(r[state.phoneField])).filter(v=>v.length>=10))];
+      const selectedRows = state.finalRows.length ? state.finalRows : state.candidateRows;
+      if(!selectedRows.length) return toast('Сначала сделайте отбор по сегментам/фильтрам','warning');
+      const phones=[...new Set(selectedRows.map(r=>normPhone(r[state.phoneField])).filter(v=>v.length>=10))];
       const blob=new Blob([phones.join('\n')],{type:'text/plain;charset=utf-8'});
       const a=document.createElement('a');
       a.href=URL.createObjectURL(blob);
@@ -674,12 +676,13 @@
 
 
   q('#btnExportXlsx').addEventListener('click',()=>{
-    if(!state.finalRows.length) return toast('Соберите итог сначала','warning');
-    const ws=XLSX.utils.json_to_sheet(state.finalRows);
+    const selectedRows = state.finalRows.length ? state.finalRows : state.candidateRows;
+    if(!selectedRows.length) return toast('Сначала сделайте отбор по сегментам/фильтрам','warning');
+    const ws=XLSX.utils.json_to_sheet(selectedRows);
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'Selection');
     XLSX.writeFile(wb,'compas_'+new Date().toISOString().slice(0,10)+'.xlsx');
-    toast('XLSX выгружен: '+fmt(state.finalRows.length)+' строк');
+    toast('XLSX выгружен: '+fmt(selectedRows.length)+' строк');
   });
 
   /* ===== SAVE / RESET ===== */
