@@ -126,9 +126,8 @@
     const map=new Map();
     rows.forEach(r=>{const k=String(r[field]??'').trim()||'—';map.set(k,(map.get(k)||0)+1);});
     const sorted=Array.from(map).sort((a,b)=>b[1]-a[1]);
-    const top=sorted.slice(0,topN), other=sorted.slice(topN).reduce((s,p)=>s+p[1],0);
+    const top=sorted.slice(0,topN);
     const labels=top.map(x=>x[0]), values=top.map(x=>x[1]);
-    if(other>0){labels.push('Прочее');values.push(other);}
     return{labels,values};
   }
   function makeEmpData(rows,field) {
