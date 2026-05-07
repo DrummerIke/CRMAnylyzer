@@ -143,10 +143,14 @@
     const ew = q('#empChartWrap');
     ew.style.height = Math.max(150,eData.labels.length*27+38)+'px';
     if(charts.emp) charts.emp.destroy();
-    charts.emp = new Chart(q('#employeeChart').getContext('2d'),{
+    const ectx=q('#employeeChart').getContext('2d');
+    const grad=ectx.createLinearGradient(0,0,220,0);
+    grad.addColorStop(0,'#ff8a4a');
+    grad.addColorStop(1,'#f37021');
+    charts.emp = new Chart(ectx,{
       type:'bar',
-      data:{labels:eData.labels,datasets:[{data:eData.values,backgroundColor:eData.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4,borderSkipped:false}]},
-      options:{animation:false,parsing:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.35)',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'rgba(255,255,255,0.65)',font:{size:10}},grid:{display:false}}}}
+      data:{labels:eData.labels,datasets:[{data:eData.values,backgroundColor:eData.labels.map(()=>grad),hoverBackgroundColor:'#ff9b63',borderRadius:6,borderSkipped:false,barThickness:14,maxBarThickness:16}]},
+      options:{animation:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(20,18,18,0.95)',titleColor:'#fff',bodyColor:'#fff',borderColor:'rgba(243,112,33,0.35)',borderWidth:1,callbacks:{label:(ctx)=>` ${ctx.raw} задач`}}},scales:{x:{beginAtZero:true,ticks:{color:'rgba(255,255,255,0.55)',font:{size:10}},grid:{color:'rgba(255,255,255,0.08)'}},y:{ticks:{color:'rgba(255,255,255,0.85)',font:{size:11,weight:'600'}},grid:{display:false}}}}
     });
   }
 
@@ -584,7 +588,7 @@
       const ctx=document.getElementById('mEC')?.getContext('2d');const wrap=document.getElementById('mEW');if(!ctx||!wrap)return;
       const d=makeEmpData(state.finalRows.length?state.finalRows:(state.candidateRows.length?state.candidateRows:state.rawData),state.employeeField);
       wrap.style.height=Math.max(280,d.labels.length*30+48)+'px';
-      new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:d.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4}]},options:{animation:false,parsing:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.4)'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'rgba(255,255,255,0.7)'},grid:{display:false}}}}});
+      new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:d.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4}]},options:{animation:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.4)'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'rgba(255,255,255,0.7)'},grid:{display:false}}}}});
     },100);
   });
   q('#cardPreview').addEventListener('click',()=>{
