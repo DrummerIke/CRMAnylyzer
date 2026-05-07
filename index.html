@@ -559,6 +559,7 @@
         </div>
       </div>
       <button class="btn btn-primary w-full" id="btnExport" disabled>🚀 Выгрузить .txt</button>
+      <button class="btn btn-ghost w-full" id="btnExportXlsx" disabled style="margin-top:8px;">📗 Выгрузить .xlsx</button>
     </div>
   </aside>
 </main>
@@ -591,7 +592,9 @@
     candidateRows:[], finalRows:[],
     employeeCap:100, employees:[],
     loaded:false,
-    filtersApplied: false // флаг: применялись ли фильтры
+    filtersApplied: false, // флаг: применялись ли фильтры
+    sortCriteria: [],
+    virtualRowsLimit: 80
   };
 
   const EMP_COLORS   = ['#f37021','#d95c22','#8d5a4a','#f3a86b','#5a3d36','#ff8a4a'];
@@ -670,18 +673,19 @@
     const can = state.finalRows.length>0;
     q('#btnExport').disabled = !can;
     q('#btnExportTop').disabled = !can;
+    q('#btnExportXlsx').disabled = !can;
   }
 
   function updatePreview() {
     const rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
     const cols = state.columns.length ? state.columns : (rows[0]?Object.keys(rows[0]):[]);
     q('#previewHead').innerHTML = '<tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
-    q('#previewCount').textContent = fmt(rows.length)+' строк';
+    q('#previewCount').textContent = fmt(rows.length)+' строк (показаны первые '+fmt(Math.min(rows.length,state.virtualRowsLimit))+')';
     if (!rows.length) {
       q('#previewBody').innerHTML = '<tr><td colspan="'+(cols.length||1)+'" style="text-align:center;color:var(--text-muted);padding:18px;">Нет данных</td></tr>';
       return;
     }
-    q('#previewBody').innerHTML = rows.slice(0,200).map(r=>'<tr>'+cols.map(c=>'<td>'+esc(String(r[c]??''))+'</td>').join('')+'</tr>').join('');
+    q('#previewBody').innerHTML = rows.slice(0,state.virtualRowsLimit).map(r=>'<tr>'+cols.map(c=>'<td>'+esc(String(r[c]??''))+'</td>').join('')+'</tr>').join('');
   }
 
   /* ===== CHARTS ===== */
@@ -710,7 +714,7 @@
     charts.seg = new Chart(q('#segmentChart').getContext('2d'),{
       type:'doughnut',
       data:{labels:sData.labels,datasets:[{data:sData.values,backgroundColor:CHART_COLORS,borderWidth:0,borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'rgba(255,255,255,0.45)',font:{size:10},boxWidth:9,padding:9}}}}
+      options:{animation:false,responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'rgba(255,255,255,0.45)',font:{size:10},boxWidth:9,padding:9}}}}
     });
     const eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
     const eData = makeEmpData(eBase, state.employeeField);
@@ -720,7 +724,7 @@
     charts.emp = new Chart(q('#employeeChart').getContext('2d'),{
       type:'bar',
       data:{labels:eData.labels,datasets:[{data:eData.values,backgroundColor:eData.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4,borderSkipped:false}]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.35)',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'rgba(255,255,255,0.65)',font:{size:10}},grid:{display:false}}}}
+      options:{animation:false,parsing:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.35)',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'rgba(255,255,255,0.65)',font:{size:10}},grid:{display:false}}}}
     });
   }
 
@@ -870,9 +874,9 @@
     document.getElementById('btnApplyF').addEventListener('click',()=>{
       if(!state.selectedSegments.size) return toast('Выберите сегменты','warning');
       showLoading();
-      setTimeout(()=>{
+      setTimeout(async ()=>{
         const filters = collectFilters();
-        state.candidateRows = state.rawData.filter(row=>{
+        state.candidateRows = await filterLargeData(state.rawData, row=>{
           if(!state.selectedSegments.has(String(row[state.segmentField]??'').trim()||'—')) return false;
           return filters.every(f=>matchFilter(row,f));
         });
@@ -881,8 +885,19 @@
         hideLoading();
         toast('Отобрано: '+fmt(state.candidateRows.length));
         updateAll();
-      },80);
+      },30);
     });
+  }
+
+
+  async function filterLargeData(rows, predicate, chunk=5000){
+    const out=[];
+    for(let i=0;i<rows.length;i+=chunk){
+      const part=rows.slice(i,i+chunk);
+      for(const r of part){ if(predicate(r)) out.push(r); }
+      await new Promise(requestAnimationFrame);
+    }
+    return out;
   }
 
   function parseDate(str){
@@ -921,7 +936,7 @@
       +'</div></div>'
       +'<div class="bcard-body">'
       +'<div class="text-xs text-muted" style="margin-bottom:9px;">Перетаскивайте для порядка. ▼ убывание, ▲ возрастание.</div>'
-      +'<div class="priority-list" id="prioList"><div class="empty-state" style="padding:18px;"><div class="empty-state-text">Добавьте поля сортировки</div></div></div>'
+      +'<div class="text-xs text-muted" id="prioExplain" style="margin-bottom:8px;">Порядок пока не задан</div>'+'<div class="priority-list" id="prioList"><div class="empty-state" style="padding:18px;"><div class="empty-state-text">Добавьте поля сортировки</div></div></div>'
       +'<div class="apply-bar"><span class="text-sm text-muted">Применяется к отобранным строкам</span><button class="btn btn-primary btn-sm" id="btnApplyPrio">Применить</button></div>'
       +'</div></div>';
 
@@ -936,8 +951,9 @@
       const prio=getPrio();
       if(!prio.length) return toast('Добавьте поля приоритета','warning');
       if(!state.candidateRows.length) return toast('Сначала примените фильтры','warning');
+      state.sortCriteria = prio;
       sortByCriteria(prio);
-      toast('Приоритет применён');
+      toast('Приоритет применён: '+prio.map(p=>p.field+' '+dirLbl(p.dir)).join(', '));
       updateAll();
     });
   }
@@ -962,7 +978,8 @@
 
   function renderPrio(items){
     const list=document.getElementById('prioList');if(!list)return;
-    if(!items.length){list.innerHTML='<div class="empty-state" style="padding:18px;"><div class="empty-state-text">Добавьте поля сортировки</div></div>';return;}
+    if(!items.length){list.innerHTML='<div class="empty-state" style="padding:18px;"><div class="empty-state-text">Добавьте поля сортировки</div></div>'; const ex=document.getElementById('prioExplain'); if(ex) ex.textContent='Порядок пока не задан'; return;}
+    const ex=document.getElementById('prioExplain'); if(ex) ex.textContent='Сортировка: '+items.map((i,idx)=>`${idx+1}) ${i.field} ${dirLbl(i.dir)}`).join(' → ');
     list.innerHTML=items.map(i=>
       '<div class="priority-item" draggable="true" data-field="'+esc(i.field)+'" data-dir="'+i.dir+'">'
       +'<span class="drag-handle">⠿</span><span class="priority-field">'+esc(i.field)+'</span>'
@@ -1123,7 +1140,7 @@
       const ctx=document.getElementById('mEC')?.getContext('2d');const wrap=document.getElementById('mEW');if(!ctx||!wrap)return;
       const d=makeEmpData(state.finalRows.length?state.finalRows:state.candidateRows,state.employeeField);
       wrap.style.height=Math.max(280,d.labels.length*30+48)+'px';
-      new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:d.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.4)'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'rgba(255,255,255,0.7)'},grid:{display:false}}}}});
+      new Chart(ctx,{type:'bar',data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:d.labels.map((_,i)=>EMP_COLORS[i%EMP_COLORS.length]),borderRadius:4}]},options:{animation:false,parsing:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.4)'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'rgba(255,255,255,0.7)'},grid:{display:false}}}}});
     },100);
   });
   q('#cardPreview').addEventListener('click',()=>{
@@ -1235,6 +1252,16 @@
     });
   });
 
+
+  q('#btnExportXlsx').addEventListener('click',()=>{
+    if(!state.finalRows.length) return toast('Соберите итог сначала','warning');
+    const ws=XLSX.utils.json_to_sheet(state.finalRows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Selection');
+    XLSX.writeFile(wb,'compas_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('XLSX выгружен: '+fmt(state.finalRows.length)+' строк');
+  });
+
   /* ===== SAVE / RESET ===== */
   q('#btnSave').addEventListener('click',()=>{
     try{
@@ -1264,7 +1291,7 @@
     q('#expPhones').textContent='—';q('#expEmployees').textContent='—';
     q('#previewBody').innerHTML='<tr><td style="text-align:center;color:var(--text-muted);padding:18px;">Нет данных</td></tr>';
     q('#previewHead').innerHTML='';q('#previewCount').textContent='0 строк';
-    qa('#btnExport, #btnExportTop').forEach(b=>b.disabled=true);
+    qa('#btnExport, #btnExportTop, #btnExportXlsx').forEach(b=>b.disabled=true);
 
     updateCharts();toast('Сброшено','warning');
   });
