@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Compas Flow • Campaign Builder</title>
   <link rel="icon" href="./logo.png" />
+  <!-- Библиотеки (при отсутствии интернета замените на локальные) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    /* ===== ПОЛНЫЙ НАБОР СТИЛЕЙ ===== */
     :root {
-      --font-main: 'Inter', system-ui, 'Helvetica Neue', sans-serif;
+      --font-main: 'Inter', system-ui, sans-serif;
       --bg-pulse: #382f2c;
       --bg-card: #282220;
       --bg-card-accent: #1f1a19;
@@ -65,6 +65,7 @@
       min-height: 100vh;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
     }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -327,6 +328,7 @@
     .cap-slider::-webkit-slider-thumb {
       -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
       background: var(--text-accent); cursor: pointer; border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .cap-value { font-weight: 800; font-size: 18px; min-width: 48px; text-align: center; }
     .employee-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
@@ -334,22 +336,27 @@
       display: grid; grid-template-columns: 1fr auto auto auto;
       gap: 12px; align-items: center; padding: 12px 16px;
       border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      transition: background var(--transition);
     }
     .employee-item:nth-child(odd) { background: rgba(255,255,255,0.03); }
     .employee-item:nth-child(even) { background: rgba(243,112,33,0.04); }
+    .employee-item:hover { background: rgba(243,112,33,0.08); }
     .employee-name { font-weight: 600; font-size: 14px; }
     .employee-found { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
     .employee-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; margin-top: 6px; }
-    .employee-bar-fill { height: 100%; background: linear-gradient(90deg, var(--text-accent), #d95c22); border-radius: 99px; }
+    .employee-bar-fill { height: 100%; background: linear-gradient(90deg, var(--text-accent), #d95c22); border-radius: 99px; transition: width 0.2s ease; }
     .employee-quota input {
       width: 72px; text-align: center; padding: 6px 8px; font-weight: 700;
       background: var(--bg-input); border: 1px solid var(--border-default);
       border-radius: 10px; color: var(--text-primary); font: inherit;
+      transition: border-color var(--transition);
     }
+    .employee-quota input:focus { border-color: var(--border-focus); }
     .employee-exclude {
       width: 34px; height: 34px; border-radius: var(--radius-sm);
       display: grid; place-items: center; cursor: pointer;
       color: var(--text-muted); border: 1px solid var(--border-default); background: transparent;
+      transition: all var(--transition);
     }
     .employee-exclude:hover, .employee-exclude.active { color: var(--text-error); border-color: var(--text-error); }
 
@@ -357,28 +364,36 @@
     .dash-card {
       background: var(--bg-card); border: 1px solid var(--border-default);
       border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--transition);
     }
+    .dash-card:hover { box-shadow: var(--shadow-md); }
     .dash-card-header {
-      padding: 12px 16px;
+      padding: 14px 18px;
       display: flex; justify-content: space-between; align-items: center;
       cursor: pointer; user-select: none;
       transition: background var(--transition);
+      font-weight: 600;
     }
     .dash-card-header:hover { background: rgba(255,255,255,0.03); }
-    .dash-card-body { padding: 0; }
+    .dash-card-body { padding: 12px; }
     .chart-wrap { height: 200px; position: relative; }
     .chart-wrap-scroll { max-height: 300px; overflow-y: auto; }
 
-    .preview-all-wrap { max-height: 380px; overflow-y: auto; overflow-x: auto; }
+    .preview-all-wrap {
+      max-height: 400px; overflow: auto;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
     .preview-all-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .preview-all-table th {
-      padding: 8px 10px; text-align: left; font-weight: 700; font-size: 10px;
+      padding: 10px 12px; text-align: left; font-weight: 700; font-size: 10px;
       color: var(--text-muted); text-transform: uppercase;
       border-bottom: 1px solid var(--border-default);
       background: var(--bg-card);
       position: sticky; top: 0; z-index: 1;
+      white-space: nowrap;
     }
-    .preview-all-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
+    .preview-all-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
     .preview-all-table tr:hover td { background: rgba(243,112,33,0.05); }
 
     .modal-overlay {
@@ -390,34 +405,35 @@
     .modal {
       background: var(--bg-modal); border: 1px solid var(--border-default);
       border-radius: var(--radius-lg); box-shadow: var(--shadow-modal);
-      width: 90vw; max-width: 900px; max-height: 85vh;
+      width: 90vw; max-width: 1000px; max-height: 85vh;
       display: flex; flex-direction: column;
       animation: modalIn 0.2s ease;
     }
     @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     .modal-header {
-      padding: 16px 20px; border-bottom: 1px solid var(--border-default);
+      padding: 18px 24px; border-bottom: 1px solid var(--border-default);
       display: flex; justify-content: space-between; align-items: center;
     }
     .modal-close {
       width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-default);
       display: grid; place-items: center; cursor: pointer;
       color: var(--text-muted); background: transparent; font-size: 18px;
+      transition: all var(--transition);
     }
     .modal-close:hover { color: var(--text-error); border-color: var(--text-error); }
-    .modal-body { padding: 0; overflow-y: auto; flex: 1; }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
     .modal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .modal-table th {
       padding: 12px 14px; text-align: left; font-weight: 700; font-size: 11px;
       color: var(--text-muted); text-transform: uppercase;
       border-bottom: 1px solid var(--border-default);
-      background: var(--bg-modal);
+      background: var(--bg-modal); position: sticky; top: 0; z-index: 1;
     }
-    .modal-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .modal-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
 
-    .export-checklist { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+    .export-checklist { display: flex; flex-direction: column; gap: 12px; margin: 12px 0; }
     .export-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
       background: rgba(255,255,255,0.02); border: 1px solid var(--border-default); border-radius: var(--radius-md);
     }
     .export-check {
@@ -435,6 +451,7 @@
       padding: 14px 18px; background: var(--bg-card-accent); border: 1px solid var(--border-default);
       border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
       display: flex; align-items: center; gap: 12px; animation: slideIn 0.2s ease;
+      backdrop-filter: blur(8px);
     }
     @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
     .toast.success { border-left: 4px solid #18a900; }
@@ -446,8 +463,21 @@
       display: none; align-items: center; justify-content: center; z-index: 2000;
     }
     .loading-overlay.active { display: flex; }
-    .loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border-default); border-top-color: var(--text-accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-default); border-top-color: var(--text-accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Дополнительные штрихи для продакшена */
+    .gradient-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+      margin: 16px 0;
+    }
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 10px; border-radius: 99px;
+      background: rgba(243,112,33,0.15); color: var(--text-accent);
+      font-size: 11px; font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -495,25 +525,25 @@
         <div class="dash-card-header" data-modal="segments">
           <span class="text-sm font-semibold">📊 Сегменты</span><span style="color:var(--text-muted);">⤢</span>
         </div>
-        <div class="dash-card-body" style="padding:12px;"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
+        <div class="dash-card-body"><div class="chart-wrap"><canvas id="segmentChart"></canvas></div></div>
       </div>
       <div class="dash-card">
         <div class="dash-card-header" data-modal="employees">
           <span class="text-sm font-semibold">👥 Сотрудники</span><span style="color:var(--text-muted);">⤢</span>
         </div>
-        <div class="dash-card-body" style="padding:12px;"><div class="chart-wrap-scroll"><div class="chart-wrap" id="employeeChartContainer"><canvas id="employeeChart"></canvas></div></div></div>
+        <div class="dash-card-body"><div class="chart-wrap-scroll"><div class="chart-wrap" id="employeeChartContainer"><canvas id="employeeChart"></canvas></div></div></div>
       </div>
 
       <div class="dash-card">
         <div class="dash-card-header" data-modal="preview">
           <span class="text-sm font-semibold">👁️ Превью (все строки)</span>
-          <span class="text-xs text-muted" id="previewCount">0</span>
+          <span class="text-xs" id="previewCount" style="color:var(--text-accent)">0</span>
         </div>
-        <div class="dash-card-body">
-          <div class="preview-all-wrap">
+        <div class="dash-card-body" style="padding:0;">
+          <div class="preview-all-wrap" id="previewContainer">
             <table class="preview-all-table">
-              <thead><tr><th>ФИО</th><th>Телефон</th><th>Сегмент</th><th>Сумма</th></tr></thead>
-              <tbody id="previewAllBody"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr></tbody>
+              <thead id="previewHeader"></thead>
+              <tbody id="previewAllBody"><tr><td colspan="100" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -541,7 +571,6 @@
 
   <script>
     (function() {
-      // Проверка библиотек
       if (typeof XLSX === 'undefined' || typeof Chart === 'undefined') {
         document.body.innerHTML = '<div style="color:white;text-align:center;padding:40px;">Ошибка: библиотеки не загружены. Проверьте интернет или скачайте xlsx.full.min.js и chart.umd.min.js локально.</div>';
         return;
@@ -568,108 +597,128 @@
 
       function toast(msg, type) {
         type = type || 'success';
-        var c = $('#toastContainer');
-        var t = document.createElement('div');
+        const c = $('#toastContainer');
+        const t = document.createElement('div');
         t.className = 'toast ' + type;
         t.innerHTML = '<span>' + (type==='success'?'✓':type==='warning'?'!':'✕') + '</span><span>' + msg + '</span>';
         c.appendChild(t);
-        setTimeout(function() { t.style.opacity='0'; setTimeout(function() { t.remove(); }, 200); }, 2500);
+        setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 200); }, 2500);
       }
 
       function showLoading() { $('#loadingOverlay').classList.add('active'); }
       function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
 
+      function updateAll() {
+        updateMetrics();
+        updatePreview();
+        updateCharts();
+      }
+
       function updateMetrics() {
         $('#metricTotal').textContent = formatNum(state.rawData.length);
-        var afterSeg = state.segmentField && state.selectedSegments.size ? state.rawData.filter(function(r) { return state.selectedSegments.has(String(r[state.segmentField]||'').trim()||'—'); }).length : 0;
+        let afterSeg = state.segmentField && state.selectedSegments.size ? state.rawData.filter(r => state.selectedSegments.has(String(r[state.segmentField]??'').trim()||'—')).length : 0;
         $('#metricSegments').textContent = formatNum(afterSeg || state.rawData.length);
         $('#metricFilters').textContent = state.candidateRows.length ? formatNum(state.candidateRows.length) : '—';
         $('#metricFinal').textContent = state.finalRows.length ? formatNum(state.finalRows.length) : '—';
-        var activeEmps = state.employees.filter(function(e) { return !e.excluded && e.quota > 0; }).length;
+        const activeEmps = state.employees.filter(e => !e.excluded && e.quota > 0).length;
         $('#metricEmployees').textContent = state.employees.length ? activeEmps + '/' + state.employees.length : '—';
-        var phones = new Set(state.finalRows.map(function(r) { return normDigits(r[state.phoneField]); }).filter(function(v) { return v.length >= 10; }));
+        const phones = new Set(state.finalRows.map(r => normDigits(r[state.phoneField])).filter(v => v.length >= 10));
         $('#expPhones').textContent = phones.size ? formatNum(phones.size) : '—';
         $('#expEmployees').textContent = activeEmps || '—';
+        $('#btnExport').disabled = !state.finalRows.length;
+        $('#btnExportTop').disabled = !state.finalRows.length;
       }
 
       function findField(cands) {
-        var n = function(s) { return String(s).toLowerCase().replace(/[\s_.,-]/g,''); };
-        for (var i = 0; i < cands.length; i++) {
-          var found = state.columns.find(function(col) { return n(col) === n(cands[i]); });
+        const n = s => String(s).toLowerCase().replace(/[\s_.,-]/g,'');
+        for (const c of cands) {
+          const found = state.columns.find(col => n(col) === n(c));
           if (found) return found;
         }
         return '';
       }
 
-      function rowToHTML(r) {
-        var p = normDigits(r[state.phoneField]);
-        var fmt = p.length >= 10 ? '+7 (' + p.slice(1,4) + ') ' + p.slice(4,7) + '-' + p.slice(7,9) + '-' + p.slice(9,11) : p;
-        return '<tr><td>' + esc(r['ФИО']||r['Имя']||'—') + '</td><td>' + fmt + '</td><td>' + esc(r[state.segmentField]||'—') + '</td><td>' + esc(r['Общ.сумма']||'—') + '</td></tr>';
+      // ===== ДИНАМИЧЕСКОЕ ПРЕВЬЮ ПО ВСЕМ КОЛОНКАМ =====
+      function updatePreview() {
+        const rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
+        const allColumns = state.columns.length ? state.columns : (rows[0] ? Object.keys(rows[0]) : []);
+        
+        // Заголовки таблицы
+        const thead = $('#previewHeader');
+        thead.innerHTML = '<tr>' + allColumns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr>';
+        
+        const tbody = $('#previewAllBody');
+        $('#previewCount').textContent = formatNum(rows.length);
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="' + allColumns.length + '" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(r => 
+          '<tr>' + allColumns.map(c => '<td>' + esc(String(r[c] ?? '')) + '</td>').join('') + '</tr>'
+        ).join('');
       }
 
       // ===== СЕГМЕНТЫ =====
       function buildSegmentsPanel() {
-        var field = state.segmentField;
+        const field = state.segmentField;
         if (!field) return;
-        var map = new Map();
-        state.rawData.forEach(function(r) {
-          var v = String(r[field]||'').trim()||'—';
+        const map = new Map();
+        state.rawData.forEach(r => {
+          const v = String(r[field]??'').trim()||'—';
           map.set(v, (map.get(v)||0)+1);
         });
-        var groups = new Map();
-        map.forEach(function(count, val) {
-          var fw = val.split(/[\s_-]/)[0]||'—';
+        const groups = new Map();
+        map.forEach((count, val) => {
+          const fw = val.split(/[\s_-]/)[0]||'—';
           if (!groups.has(fw)) groups.set(fw, []);
-          groups.get(fw).push({val: val, count: count});
+          groups.get(fw).push({val, count});
         });
-        var sortedGroups = Array.from(groups).sort(function(a,b) { return a[0].localeCompare(b[0],'ru'); });
+        const sortedGroups = Array.from(groups).sort((a,b) => a[0].localeCompare(b[0],'ru'));
         state.selectedSegments = new Set(map.keys());
-        var html = '';
-        sortedGroups.forEach(function(entry) {
-          var gname = entry[0], items = entry[1];
-          var total = items.reduce(function(s,i) { return s + i.count; }, 0);
+        let html = '';
+        sortedGroups.forEach(([gname, items]) => {
+          const total = items.reduce((s,i) => s + i.count, 0);
           html += '<div class="segment-group"><div class="segment-group-header"><div class="segment-group-title">' + esc(gname) + '</div><span class="segment-group-count">' + formatNum(total) + '</span></div><div class="segment-list">';
-          items.sort(function(a,b) { return a.val.localeCompare(b.val,'ru'); }).forEach(function(item) {
-            html += '<div class="segment-item active" data-seg="' + esc(item.val) + '"><div class="segment-checkbox"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="segment-name">' + esc(item.val) + '</span><span class="segment-count">' + item.count + '</span></div>';
+          items.sort((a,b) => a.val.localeCompare(b.val,'ru')).forEach(({val, count}) => {
+            html += '<div class="segment-item active" data-seg="' + esc(val) + '"><div class="segment-checkbox"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="segment-name">' + esc(val) + '</span><span class="segment-count">' + count + '</span></div>';
           });
           html += '</div></div>';
         });
         getPanel('segments').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">1</div><div><div class="text-lg">Сегменты</div></div></div><div class="flex gap-2"><button class="btn-secondary btn-sm" id="btnSelectAll">Все</button><button class="btn-ghost btn-sm" id="btnClearAll">Снять</button></div></div><div class="card-body"><div class="segment-search"><span class="segment-search-icon">🔍</span><input class="input" id="segmentSearch" placeholder="Поиск..."></div><div id="segmentGroups">' + html + '</div></div></div>';
 
-        $$('#panel-segments .segment-item').forEach(function(item) {
-          item.addEventListener('click', function() {
+        $$('#panel-segments .segment-item').forEach(item => {
+          item.addEventListener('click', () => {
             item.classList.toggle('active');
-            var seg = item.dataset.seg;
-            if (state.selectedSegments.has(seg)) state.selectedSegments.delete(seg);
-            else state.selectedSegments.add(seg);
-            updateMetrics();
+            const seg = item.dataset.seg;
+            state.selectedSegments.has(seg) ? state.selectedSegments.delete(seg) : state.selectedSegments.add(seg);
+            updateAll();
           });
         });
 
-        var searchInput = document.getElementById('segmentSearch');
+        const searchInput = document.getElementById('segmentSearch');
         if (searchInput) {
-          searchInput.addEventListener('input', function(e) {
-            var t = e.target.value.toLowerCase();
-            $$('#panel-segments .segment-item').forEach(function(item) {
+          searchInput.addEventListener('input', e => {
+            const t = e.target.value.toLowerCase();
+            $$('#panel-segments .segment-item').forEach(item => {
               item.style.display = item.dataset.seg.toLowerCase().includes(t) ? '' : 'none';
             });
           });
         }
 
-        document.getElementById('btnSelectAll').addEventListener('click', function() {
-          state.selectedSegments = new Set(state.rawData.map(function(r) { return String(r[state.segmentField]||'').trim()||'—'; }));
-          $$('#panel-segments .segment-item').forEach(function(item) { item.classList.add('active'); });
-          updateMetrics();
+        document.getElementById('btnSelectAll').addEventListener('click', () => {
+          state.selectedSegments = new Set(state.rawData.map(r => String(r[state.segmentField]??'').trim()||'—'));
+          $$('#panel-segments .segment-item').forEach(item => item.classList.add('active'));
+          updateAll();
         });
-        document.getElementById('btnClearAll').addEventListener('click', function() {
+        document.getElementById('btnClearAll').addEventListener('click', () => {
           state.selectedSegments = new Set();
-          $$('#panel-segments .segment-item').forEach(function(item) { item.classList.remove('active'); });
-          updateMetrics();
+          $$('#panel-segments .segment-item').forEach(item => item.classList.remove('active'));
+          updateAll();
         });
       }
 
-      // ===== ФИЛЬТРЫ =====
-      var FILTER_TYPES = {
+      // ===== ФИЛЬТРЫ (БЕЗ ИЗМЕНЕНИЙ) =====
+      const FILTER_TYPES = {
         'Телефон': { op: 'value', type: 'text', placeholder: '7999...' },
         'Общ.сумма': { op: 'number', type: 'number', placeholder: 'Сумма' },
         'Посл.покупка': { op: 'date', type: 'date', placeholder: 'дд.мм.гггг' },
@@ -680,32 +729,32 @@
         'Дата коммуникации': { op: 'date', type: 'date', placeholder: 'дд.мм.гггг' },
         'ДР': { op: 'date', type: 'date', placeholder: 'дд.мм.гггг' }
       };
-      var EXCLUDE_COLS = ['Номер карты','ФИО','Заметки'];
-      var filterId = 0;
+      const EXCLUDE_COLS = ['Номер карты','ФИО','Заметки'];
+      let filterId = 0;
 
       function buildFiltersPanel() {
-        var cols = state.columns.filter(function(c) { return !EXCLUDE_COLS.includes(c) && c !== state.segmentField && c !== state.employeeField; });
+        const cols = state.columns.filter(c => !EXCLUDE_COLS.includes(c) && c !== state.segmentField && c !== state.employeeField);
         getPanel('filters').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">2</div><div class="text-lg">Условия</div></div></div><div class="card-body"><div style="margin-bottom:12px;"><button class="btn-secondary btn-sm" id="btnAddFilter">+ Добавить условие</button></div><div id="filterRules"></div><div class="apply-bar"><span class="text-sm text-muted">Фильтры необязательны</span><button class="btn btn-sm" id="btnApplyFilters">Применить</button></div></div></div>';
 
-        document.getElementById('btnAddFilter').addEventListener('click', function() {
+        document.getElementById('btnAddFilter').addEventListener('click', () => {
           filterId++;
-          var rule = document.createElement('div');
+          const rule = document.createElement('div');
           rule.className = 'filter-rule';
           rule.innerHTML = '<div class="filter-rule-header"><span class="font-medium">Условие ' + filterId + '</span><button class="btn-ghost" data-remove>✕</button></div>' +
             '<div class="filter-fields-inline">' +
-              '<div><label class="filter-field-label">Поле</label><select class="select filter-field">' + cols.map(function(c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') + '</select></div>' +
+              '<div><label class="filter-field-label">Поле</label><select class="select filter-field">' + cols.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</select></div>' +
               '<div class="filter-op-container"><label class="filter-field-label">Условие</label><select class="select filter-op"></select></div>' +
               '<div class="filter-val-container"><label class="filter-field-label">Значение</label><input class="input filter-value" placeholder="..."></div>' +
             '</div>';
           document.getElementById('filterRules').appendChild(rule);
 
-          var fieldSel = rule.querySelector('.filter-field');
-          var opSel = rule.querySelector('.filter-op');
-          var valContainer = rule.querySelector('.filter-val-container');
+          const fieldSel = rule.querySelector('.filter-field');
+          const opSel = rule.querySelector('.filter-op');
+          const valContainer = rule.querySelector('.filter-val-container');
 
           function updateUI() {
-            var fname = fieldSel.value;
-            var cfg = FILTER_TYPES[fname] || { op: 'value', type: 'text', placeholder: 'Значение' };
+            const fname = fieldSel.value;
+            const cfg = FILTER_TYPES[fname] || { op: 'value', type: 'text', placeholder: 'Значение' };
             opSel.innerHTML = '';
             if (cfg.op === 'value') {
               opSel.innerHTML = '<option value="value">Содержит</option>';
@@ -728,68 +777,66 @@
           }
 
           fieldSel.addEventListener('change', updateUI);
-          opSel.addEventListener('change', function() {
+          opSel.addEventListener('change', () => {
             if ((FILTER_TYPES[fieldSel.value] || {}).op === 'date') updateDateInput(valContainer, opSel.value);
           });
           updateUI();
 
-          rule.querySelectorAll('[data-remove]').forEach(function(btn) {
-            btn.addEventListener('click', function() { rule.remove(); });
-          });
+          rule.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => rule.remove()));
         });
 
-        document.getElementById('btnApplyFilters').addEventListener('click', function() {
+        document.getElementById('btnApplyFilters').addEventListener('click', () => {
           if (!state.selectedSegments.size) return toast('Выберите сегменты','warning');
           showLoading();
-          setTimeout(function() {
-            var filters = [];
-            $$('#filterRules .filter-rule').forEach(function(r) {
-              var field = r.querySelector('.filter-field').value;
-              var op = r.querySelector('.filter-op').value;
-              var valEl = r.querySelector('.filter-value');
-              var val = valEl ? valEl.value : '';
+          setTimeout(() => {
+            const filters = [];
+            $$('#filterRules .filter-rule').forEach(r => {
+              const field = r.querySelector('.filter-field').value;
+              const op = r.querySelector('.filter-op').value;
+              const valEl = r.querySelector('.filter-value');
+              const val = valEl ? valEl.value : '';
               if (val || op === 'date_range') {
                 if (op === 'date_range') {
-                  var d1 = (r.querySelector('.filter-value-date1') || {}).value || '';
-                  var d2 = (r.querySelector('.filter-value-date2') || {}).value || '';
-                  if (d1 || d2) filters.push({ field: field, op: op, value: d1, value2: d2 });
+                  const d1 = (r.querySelector('.filter-value-date1') || {}).value || '';
+                  const d2 = (r.querySelector('.filter-value-date2') || {}).value || '';
+                  if (d1 || d2) filters.push({ field, op, value: d1, value2: d2 });
                 } else {
-                  filters.push({ field: field, op: op, value: val });
+                  filters.push({ field, op, value: val });
                 }
               }
             });
-            state.candidateRows = state.rawData.filter(function(row) {
-              if (!state.selectedSegments.has(String(row[state.segmentField]||'').trim()||'—')) return false;
-              return filters.every(function(f) { return matchFilter(row, f); });
+            state.candidateRows = state.rawData.filter(row => {
+              if (!state.selectedSegments.has(String(row[state.segmentField]??'').trim()||'—')) return false;
+              return filters.every(f => matchFilter(row, f));
             });
             buildEmployeesPanel();
             hideLoading();
             toast('Отобрано: ' + formatNum(state.candidateRows.length));
-            updateMetrics(); updateCharts(); updatePreviewAll();
+            updateAll();
           }, 80);
         });
       }
 
       function parseDate(str) {
         if (!str) return null;
-        var parts = str.split('.');
+        const parts = str.split('.');
         if (parts.length === 3) return new Date(+parts[2], +parts[1]-1, +parts[0]);
         return new Date(str);
       }
 
       function matchFilter(row, f) {
-        var raw = String(row[f.field] || '');
-        var cfg = FILTER_TYPES[f.field];
+        const raw = String(row[f.field] ?? '');
+        const cfg = FILTER_TYPES[f.field];
         if (cfg && cfg.op === 'date') {
-          var rowDate = parseDate(raw);
+          const rowDate = parseDate(raw);
           if (!rowDate) return false;
-          var fDate = parseDate(f.value);
+          const fDate = parseDate(f.value);
           if (f.op === 'date_eq') return fDate && rowDate.toDateString() === fDate.toDateString();
           if (f.op === 'date_after') return fDate && rowDate >= fDate;
           if (f.op === 'date_before') return fDate && rowDate <= fDate;
           if (f.op === 'date_range') {
-            var d1 = parseDate(f.value);
-            var d2 = parseDate(f.value2);
+            const d1 = parseDate(f.value);
+            const d2 = parseDate(f.value2);
             if (d1 && d2) return rowDate >= d1 && rowDate <= d2;
             if (d1) return rowDate >= d1;
             if (d2) return rowDate <= d2;
@@ -798,8 +845,8 @@
           return true;
         }
         if (f.op === 'value') return raw.toLowerCase().includes(String(f.value).toLowerCase());
-        var num = parseFloat(raw.replace(/\s|,/g,'.'));
-        var fnum = parseFloat(String(f.value).replace(/\s|,/g,'.'));
+        const num = parseFloat(raw.replace(/\s|,/g,'.'));
+        const fnum = parseFloat(String(f.value).replace(/\s|,/g,'.'));
         if (isNaN(num) || isNaN(fnum)) return false;
         switch(f.op) {
           case 'gt': return num > fnum;
@@ -811,63 +858,66 @@
         }
       }
 
-      // ===== ПРИОРИТЕТ =====
+      // ===== ПРИОРИТЕТ С ВЫБОРОМ ПОЛЯ =====
       function buildPriorityPanel() {
-        getPanel('priority').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">3</div><div class="text-lg">Приоритет</div></div><div class="flex gap-2"><button class="btn-secondary btn-sm" id="btnAddPriority">+ Поле</button></div></div><div class="card-body"><div class="priority-list" id="priorityList"><div class="text-muted" style="text-align:center;padding:24px;">Добавьте поля</div></div></div></div>';
-        document.getElementById('btnAddPriority').addEventListener('click', function() {
-          var used = new Set(Array.from($$('#priorityList .priority-item')).map(function(el) { return el.dataset.field; }));
-          var avail = state.columns.filter(function(c) { return !used.has(c) && c !== 'Номер карты' && c !== 'Заметки'; });
-          if (!avail.length) return toast('Все поля добавлены','warning');
-          renderPriority(getCurrentPriority().concat([{ field: avail[0], dir: 'desc' }]));
+        const availFields = state.columns.filter(c => c !== 'Номер карты' && c !== 'Заметки');
+        getPanel('priority').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">3</div><div class="text-lg">Приоритет</div></div><div class="flex gap-2" style="align-items:center;">' +
+          '<select class="select" id="prioritySelect" style="width:auto;min-width:140px;">' + availFields.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</select>' +
+          '<button class="btn-secondary btn-sm" id="btnAddPriority">+</button></div></div>' +
+          '<div class="card-body"><div class="priority-list" id="priorityList"><div class="text-muted" style="text-align:center;padding:24px;">Добавьте поля</div></div></div></div>';
+
+        document.getElementById('btnAddPriority').addEventListener('click', () => {
+          const sel = document.getElementById('prioritySelect');
+          const field = sel.value;
+          if (!field) return;
+          const used = new Set(Array.from($$('#priorityList .priority-item')).map(el => el.dataset.field));
+          if (used.has(field)) return toast('Это поле уже добавлено','warning');
+          renderPriority(getCurrentPriority().concat([{ field: field, dir: 'desc' }]));
         });
       }
 
       function getCurrentPriority() {
-        return Array.from($$('#priorityList .priority-item')).map(function(el) { return { field: el.dataset.field, dir: el.dataset.dir }; });
+        return Array.from($$('#priorityList .priority-item')).map(el => ({ field: el.dataset.field, dir: el.dataset.dir }));
       }
 
       function renderPriority(items) {
-        var list = document.getElementById('priorityList');
+        const list = document.getElementById('priorityList');
         if (!list) return;
         if (!items.length) {
           list.innerHTML = '<div class="text-muted" style="text-align:center;padding:24px;">Добавьте поля</div>';
           return;
         }
-        list.innerHTML = items.map(function(i) {
-          return '<div class="priority-item" draggable="true" data-field="' + esc(i.field) + '" data-dir="' + i.dir + '"><span class="priority-drag">⋮</span><span class="priority-field">' + esc(i.field) + '</span><span class="priority-direction">' + (i.dir==='desc'?'▼':i.dir==='asc'?'▲':'★') + '</span><button class="priority-remove">✕</button></div>';
-        }).join('');
+        list.innerHTML = items.map(i => 
+          '<div class="priority-item" draggable="true" data-field="' + esc(i.field) + '" data-dir="' + i.dir + '">' +
+            '<span class="priority-drag">⋮</span><span class="priority-field">' + esc(i.field) + '</span>' +
+            '<span class="priority-direction">' + (i.dir==='desc'?'▼':i.dir==='asc'?'▲':'★') + '</span>' +
+            '<button class="priority-remove">✕</button></div>'
+        ).join('');
 
-        list.querySelectorAll('.priority-direction').forEach(function(d) {
-          d.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var next = d.dataset.dir === 'desc' ? 'asc' : d.dataset.dir === 'asc' ? 'custom' : 'desc';
-            d.dataset.dir = next;
-            d.textContent = next === 'desc' ? '▼' : next === 'asc' ? '▲' : '★';
-            d.closest('.priority-item').dataset.dir = next;
-          });
-        });
+        list.querySelectorAll('.priority-direction').forEach(d => d.addEventListener('click', e => {
+          e.stopPropagation();
+          const next = d.dataset.dir === 'desc' ? 'asc' : d.dataset.dir === 'asc' ? 'custom' : 'desc';
+          d.dataset.dir = next;
+          d.textContent = next === 'desc' ? '▼' : next === 'asc' ? '▲' : '★';
+          d.closest('.priority-item').dataset.dir = next;
+        }));
 
-        list.querySelectorAll('.priority-remove').forEach(function(btn) {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            btn.closest('.priority-item').remove();
-            if (!list.children.length) list.innerHTML = '<div class="text-muted" style="text-align:center;padding:24px;">Добавьте поля</div>';
-          });
-        });
+        list.querySelectorAll('.priority-remove').forEach(btn => btn.addEventListener('click', e => {
+          e.stopPropagation();
+          btn.closest('.priority-item').remove();
+          if (!list.children.length) list.innerHTML = '<div class="text-muted" style="text-align:center;padding:24px;">Добавьте поля</div>';
+        }));
 
-        var dragEl = null;
-        list.querySelectorAll('.priority-item').forEach(function(item) {
-          item.addEventListener('dragstart', function(e) { dragEl = item; item.classList.add('dragging'); });
-          item.addEventListener('dragend', function() { item.classList.remove('dragging'); dragEl = null; });
-          item.addEventListener('dragover', function(e) {
+        let dragEl = null;
+        list.querySelectorAll('.priority-item').forEach(item => {
+          item.addEventListener('dragstart', e => { dragEl = item; item.classList.add('dragging'); });
+          item.addEventListener('dragend', () => { item.classList.remove('dragging'); dragEl = null; });
+          item.addEventListener('dragover', e => {
             e.preventDefault();
             if (!dragEl || dragEl === item) return;
-            var rect = item.getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height/2) {
-              item.parentNode.insertBefore(dragEl, item);
-            } else {
-              item.parentNode.insertBefore(dragEl, item.nextSibling);
-            }
+            const rect = item.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height/2) item.parentNode.insertBefore(dragEl, item);
+            else item.parentNode.insertBefore(dragEl, item.nextSibling);
           });
         });
       }
@@ -878,31 +928,29 @@
           getPanel('employees').innerHTML = '<div class="card"><div class="card-body"><div class="text-muted" style="text-align:center;padding:24px;">Примените фильтры</div></div></div>';
           return;
         }
-        var map = new Map();
-        state.candidateRows.forEach(function(r) {
-          var n = String(r[state.employeeField]||'').trim()||'—';
+        const map = new Map();
+        state.candidateRows.forEach(r => {
+          const n = String(r[state.employeeField]??'').trim()||'—';
           if (!map.has(n)) map.set(n, []);
           map.get(n).push(r);
         });
-        state.employees = Array.from(map).map(function(entry) {
-          var name = entry[0], rows = entry[1];
-          return { name: name, found: rows.length, quota: Math.min(rows.length, state.employeeCap), excluded: false };
-        }).sort(function(a,b) { return a.name.localeCompare(b.name,'ru'); });
+        state.employees = Array.from(map).map(([name, rows]) => ({ name, found: rows.length, quota: Math.min(rows.length, state.employeeCap), excluded: false }))
+          .sort((a,b) => a.name.localeCompare(b.name,'ru'));
         renderEmployeesPanel();
-        updateMetrics();
+        updateAll();
       }
 
       function renderEmployeesPanel() {
-        var cap = state.employeeCap;
-        var html = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">4</div><div class="text-lg">Распределение</div></div></div><div class="card-body">' +
+        const cap = state.employeeCap;
+        let html = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">4</div><div class="text-lg">Распределение</div></div></div><div class="card-body">' +
           '<div class="employee-controls"><div class="cap-slider-wrap"><span class="text-sm">Лимит:</span>' +
           '<input type="range" min="10" max="500" value="' + cap + '" id="capSlider" class="cap-slider">' +
           '<span class="cap-value" id="capValue">' + cap + '</span></div>' +
           '<div class="flex gap-2"><button class="btn-secondary btn-sm" id="btnEqual">⚖️ Поровну</button><button class="btn-secondary btn-sm" id="btnFill">🎯 Заполнить</button></div></div>' +
           '<div class="employee-list" id="employeeList">';
 
-        state.employees.forEach(function(emp, i) {
-          var pct = Math.min(100, Math.round((emp.quota/emp.found)*100));
+        state.employees.forEach((emp, i) => {
+          const pct = Math.min(100, Math.round((emp.quota/emp.found)*100));
           html += '<div class="employee-item" data-idx="' + i + '">' +
             '<div><div class="employee-name">' + esc(emp.name) + '</div><div class="employee-found">' + formatNum(emp.found) + '</div><div class="employee-bar"><div class="employee-bar-fill" style="width:' + pct + '%"></div></div></div>' +
             '<div class="font-semibold emp-quota-label">' + emp.quota + '</div>' +
@@ -913,54 +961,42 @@
         html += '</div><div class="apply-bar" style="margin-top:12px;"><span class="text-sm text-muted">Настройте квоты</span><button class="btn btn-sm" id="btnApplyEmployees">Применить</button></div></div></div>';
         getPanel('employees').innerHTML = html;
 
-        var slider = document.getElementById('capSlider');
-        var capVal = document.getElementById('capValue');
+        const slider = document.getElementById('capSlider');
+        const capVal = document.getElementById('capValue');
         if (slider) {
-          slider.addEventListener('input', function() {
-            var newCap = parseInt(this.value);
+          slider.addEventListener('input', () => {
+            const newCap = parseInt(slider.value);
             state.employeeCap = newCap;
             capVal.textContent = newCap;
-            state.employees.forEach(function(emp) { if (!emp.excluded) emp.quota = Math.min(emp.found, newCap); });
-            $$('#employeeList .employee-item').forEach(function(item) {
-              var idx = parseInt(item.dataset.idx);
-              var emp = state.employees[idx];
-              var input = item.querySelector('.emp-quota-input');
-              var bar = item.querySelector('.employee-bar-fill');
-              var label = item.querySelector('.emp-quota-label');
-              if (!emp.excluded && input) {
-                input.value = emp.quota;
-                input.max = emp.found;
-                bar.style.width = Math.min(100, Math.round((emp.quota/emp.found)*100)) + '%';
-                label.textContent = emp.quota;
-              }
-            });
-            updateMetrics();
+            state.employees.forEach(emp => { if (!emp.excluded) emp.quota = Math.min(emp.found, newCap); });
+            refreshEmployeeUI();
+            updateAll();
           });
         }
 
-        document.getElementById('btnEqual').addEventListener('click', function() {
-          var active = state.employees.filter(function(e) { return !e.excluded; });
+        document.getElementById('btnEqual').addEventListener('click', () => {
+          const active = state.employees.filter(e => !e.excluded);
           if (!active.length) return;
-          var per = Math.min(state.employeeCap, Math.floor(state.candidateRows.length / active.length));
-          active.forEach(function(e) { e.quota = Math.min(e.found, per); });
+          const per = Math.min(state.employeeCap, Math.floor(state.candidateRows.length / active.length));
+          active.forEach(e => e.quota = Math.min(e.found, per));
           refreshEmployeeUI();
-          updateMetrics();
+          updateAll();
         });
 
-        document.getElementById('btnFill').addEventListener('click', function() {
-          state.employees.forEach(function(e) { if (!e.excluded) e.quota = Math.min(e.found, state.employeeCap); });
+        document.getElementById('btnFill').addEventListener('click', () => {
+          state.employees.forEach(e => { if (!e.excluded) e.quota = Math.min(e.found, state.employeeCap); });
           refreshEmployeeUI();
-          updateMetrics();
+          updateAll();
         });
 
         function refreshEmployeeUI() {
-          $$('#employeeList .employee-item').forEach(function(item) {
-            var idx = parseInt(item.dataset.idx);
-            var emp = state.employees[idx];
+          $$('#employeeList .employee-item').forEach(item => {
+            const idx = parseInt(item.dataset.idx);
+            const emp = state.employees[idx];
             if (emp.excluded) return;
-            var input = item.querySelector('.emp-quota-input');
-            var bar = item.querySelector('.employee-bar-fill');
-            var label = item.querySelector('.emp-quota-label');
+            const input = item.querySelector('.emp-quota-input');
+            const bar = item.querySelector('.employee-bar-fill');
+            const label = item.querySelector('.emp-quota-label');
             if (input) {
               input.value = emp.quota;
               bar.style.width = Math.min(100, Math.round((emp.quota/emp.found)*100)) + '%';
@@ -969,29 +1005,29 @@
           });
         }
 
-        $$('#employeeList .employee-item').forEach(function(item) {
-          var idx = parseInt(item.dataset.idx);
-          var input = item.querySelector('.emp-quota-input');
-          var exBtn = item.querySelector('.employee-exclude');
-          var bar = item.querySelector('.employee-bar-fill');
-          var label = item.querySelector('.emp-quota-label');
+        $$('#employeeList .employee-item').forEach(item => {
+          const idx = parseInt(item.dataset.idx);
+          const input = item.querySelector('.emp-quota-input');
+          const exBtn = item.querySelector('.employee-exclude');
+          const bar = item.querySelector('.employee-bar-fill');
+          const label = item.querySelector('.emp-quota-label');
 
           if (input) {
-            input.addEventListener('input', function() {
-              var v = parseInt(this.value) || 0;
+            input.addEventListener('input', () => {
+              let v = parseInt(input.value) || 0;
               v = Math.max(0, Math.min(v, state.employees[idx].found, state.employeeCap));
-              this.value = v;
+              input.value = v;
               state.employees[idx].quota = v;
               bar.style.width = Math.min(100, Math.round((v/state.employees[idx].found)*100)) + '%';
               label.textContent = v;
-              updateMetrics();
+              updateAll();
             });
           }
 
           if (exBtn) {
-            exBtn.addEventListener('click', function() {
+            exBtn.addEventListener('click', () => {
               state.employees[idx].excluded = !state.employees[idx].excluded;
-              this.classList.toggle('active');
+              exBtn.classList.toggle('active');
               if (state.employees[idx].excluded) {
                 input.value = 0;
                 input.disabled = true;
@@ -1000,95 +1036,85 @@
                 label.textContent = '0';
               } else {
                 input.disabled = false;
-                var newQuota = Math.min(state.employees[idx].found, state.employeeCap);
+                const newQuota = Math.min(state.employees[idx].found, state.employeeCap);
                 input.value = newQuota;
                 state.employees[idx].quota = newQuota;
                 bar.style.width = Math.min(100, Math.round((newQuota/state.employees[idx].found)*100)) + '%';
                 label.textContent = newQuota;
               }
-              updateMetrics();
+              updateAll();
             });
           }
         });
 
-        document.getElementById('btnApplyEmployees').addEventListener('click', function() {
+        document.getElementById('btnApplyEmployees').addEventListener('click', () => {
           showLoading();
-          setTimeout(function() {
-            var groups = new Map();
-            state.candidateRows.forEach(function(r) {
-              var n = String(r[state.employeeField]||'').trim()||'—';
+          setTimeout(() => {
+            const groups = new Map();
+            state.candidateRows.forEach(r => {
+              const n = String(r[state.employeeField]??'').trim()||'—';
               if (!groups.has(n)) groups.set(n, []);
               groups.get(n).push(r);
             });
             state.finalRows = [];
-            state.employees.forEach(function(emp) {
+            state.employees.forEach(emp => {
               if (emp.excluded || emp.quota <= 0) return;
-              var arr = groups.get(emp.name) || [];
+              const arr = groups.get(emp.name) || [];
               state.finalRows = state.finalRows.concat(arr.slice(0, emp.quota));
             });
             hideLoading();
             toast('Итог: ' + formatNum(state.finalRows.length));
-            updateMetrics(); updateCharts(); updatePreviewAll();
-            $('#btnExport').disabled = !state.finalRows.length;
-            $('#btnExportTop').disabled = !state.finalRows.length;
+            updateAll();
           }, 80);
         });
       }
 
-      function updatePreviewAll() {
-        var rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
-        var tbody = $('#previewAllBody');
-        $('#previewCount').textContent = formatNum(rows.length);
-        if (!rows.length) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
-          return;
-        }
-        tbody.innerHTML = rows.map(rowToHTML).join('');
-      }
-
+      // ===== МОДАЛКИ =====
       function openModal(title, content) {
         $('#modalTitle').textContent = title;
         $('#modalBody').innerHTML = content;
         $('#modalOverlay').classList.add('active');
       }
 
-      $('#modalClose').addEventListener('click', function() { $('#modalOverlay').classList.remove('active'); });
-      $('#modalOverlay').addEventListener('click', function(e) { if (e.target === $('#modalOverlay')) $('#modalOverlay').classList.remove('active'); });
+      $('#modalClose').addEventListener('click', () => $('#modalOverlay').classList.remove('active'));
+      $('#modalOverlay').addEventListener('click', e => { if (e.target === $('#modalOverlay')) $('#modalOverlay').classList.remove('active'); });
 
-      $$('.dash-card-header[data-modal]').forEach(function(header) {
-        header.addEventListener('click', function() {
-          var type = header.dataset.modal;
+      $$('.dash-card-header[data-modal]').forEach(header => {
+        header.addEventListener('click', () => {
+          const type = header.dataset.modal;
           if (type === 'segments') {
             openModal('📊 Сегменты', '<div class="chart-wrap" style="height:420px;"><canvas id="modalSegmentChart"></canvas></div>');
-            setTimeout(function() {
-              var ctx = (document.getElementById('modalSegmentChart') || {}).getContext('2d');
+            setTimeout(() => {
+              const ctx = document.getElementById('modalSegmentChart')?.getContext('2d');
               if (!ctx) return;
-              var data = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 8);
+              const data = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 8);
               new Chart(ctx, { type: 'doughnut', data: { labels: data.labels, datasets: [{ data: data.values, backgroundColor: ['#f37021','#ff8a4a','#f3a86b','#d95c22','#8d5a4a','#5a3d36','#f58d4d','#c44d1a'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } } });
             }, 100);
           } else if (type === 'employees') {
             openModal('👥 Сотрудники', '<div class="chart-wrap-scroll"><div class="chart-wrap" id="modalEmployeeChartContainer"><canvas id="modalEmployeeChart"></canvas></div></div>');
-            setTimeout(function() {
-              var ctx = (document.getElementById('modalEmployeeChart') || {}).getContext('2d');
-              var container = document.getElementById('modalEmployeeChartContainer');
+            setTimeout(() => {
+              const ctx = document.getElementById('modalEmployeeChart')?.getContext('2d');
+              const container = document.getElementById('modalEmployeeChartContainer');
               if (!ctx || !container) return;
-              var eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
-              var eData = makeEmployeeData(eBase, state.employeeField);
+              const eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
+              const eData = makeEmployeeData(eBase, state.employeeField);
               container.style.height = Math.max(300, eData.labels.length * 35 + 50) + 'px';
-              new Chart(ctx, { type: 'bar', data: { labels: eData.labels, datasets: [{ data: eData.values, backgroundColor: eData.labels.map(function(_, i) { return EMP_COLORS[i % EMP_COLORS.length]; }) }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' } }, y: { ticks: { color: '#fff' } } } });
+              new Chart(ctx, { type: 'bar', data: { labels: eData.labels, datasets: [{ data: eData.values, backgroundColor: eData.labels.map((_,i) => EMP_COLORS[i%EMP_COLORS.length]) }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' } }, y: { ticks: { color: '#fff' } } } });
             }, 100);
           } else if (type === 'preview') {
-            var rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
-            var tbody = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
-            if (rows.length) tbody = rows.map(rowToHTML).join('');
-            openModal('👁️ Превью (' + formatNum(rows.length) + ' строк)', '<table class="modal-table"><thead><tr><th>ФИО</th><th>Телефон</th><th>Сегмент</th><th>Сумма</th></tr></thead><tbody>' + tbody + '</tbody></table>');
+            const rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
+            const allCols = state.columns.length ? state.columns : (rows[0] ? Object.keys(rows[0]) : []);
+            let headerHtml = '<tr>' + allCols.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr>';
+            let bodyHtml = rows.length ? rows.map(r => '<tr>' + allCols.map(c => '<td>' + esc(String(r[c]??'')) + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + allCols.length + '" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
+            openModal('👁️ Превью (' + formatNum(rows.length) + ' строк)', '<table class="modal-table"><thead>' + headerHtml + '</thead><tbody>' + bodyHtml + '</tbody></table>');
           }
         });
       });
 
-      var charts = { segment: null, employee: null };
+      // ===== ЧАРТЫ =====
+      let charts = { segment: null, employee: null };
       function updateCharts() {
-        var sData = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 6);
+        const sData = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 6);
         if (charts.segment) charts.segment.destroy();
         charts.segment = new Chart($('#segmentChart').getContext('2d'), {
           type: 'doughnut',
@@ -1096,79 +1122,61 @@
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } }
         });
 
-        var eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
-        var eData = makeEmployeeData(eBase, state.employeeField);
-        var container = $('#employeeChartContainer');
+        const eBase = state.finalRows.length ? state.finalRows : state.candidateRows;
+        const eData = makeEmployeeData(eBase, state.employeeField);
+        const container = $('#employeeChartContainer');
         container.style.height = Math.max(180, eData.labels.length * 28 + 40) + 'px';
         if (charts.employee) charts.employee.destroy();
         charts.employee = new Chart($('#employeeChart').getContext('2d'), {
           type: 'bar',
-          data: { labels: eData.labels, datasets: [{ data: eData.values, backgroundColor: eData.labels.map(function(_, i) { return EMP_COLORS[i % EMP_COLORS.length]; }) }] },
+          data: { labels: eData.labels, datasets: [{ data: eData.values, backgroundColor: eData.labels.map((_,i) => EMP_COLORS[i%EMP_COLORS.length]) }] },
           options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' } }, y: { ticks: { color: '#fff' } } } }
         });
       }
 
       function makeChartData(rows, field, topN) {
-        var map = new Map();
-        rows.forEach(function(r) { var k = String(r[field]||'').trim()||'—'; map.set(k, (map.get(k)||0)+1); });
-        var sorted = Array.from(map).sort(function(a,b) { return b[1] - a[1]; });
-        var top = sorted.slice(0, topN);
-        var other = sorted.slice(topN).reduce(function(s, pair) { return s + pair[1]; }, 0);
-        var labels = top.map(function(x) { return x[0]; });
-        var values = top.map(function(x) { return x[1]; });
+        const map = new Map();
+        rows.forEach(r => { const k = String(r[field]??'').trim()||'—'; map.set(k, (map.get(k)||0)+1); });
+        const sorted = Array.from(map).sort((a,b) => b[1] - a[1]);
+        const top = sorted.slice(0, topN);
+        const other = sorted.slice(topN).reduce((s, pair) => s + pair[1], 0);
+        const labels = top.map(x => x[0]);
+        const values = top.map(x => x[1]);
         if (other > 0) { labels.push('Прочее'); values.push(other); }
-        return { labels: labels, values: values };
+        return { labels, values };
       }
 
       function makeEmployeeData(rows, field) {
-        var map = new Map();
-        rows.forEach(function(r) { var k = String(r[field]||'').trim()||'—'; map.set(k, (map.get(k)||0)+1); });
-        var sorted = Array.from(map).sort(function(a,b) { return b[1] - a[1]; });
-        return { labels: sorted.map(function(x) { return x[0]; }), values: sorted.map(function(x) { return x[1]; }) };
+        const map = new Map();
+        rows.forEach(r => { const k = String(r[field]??'').trim()||'—'; map.set(k, (map.get(k)||0)+1); });
+        const sorted = Array.from(map).sort((a,b) => b[1] - a[1]);
+        return { labels: sorted.map(x => x[0]), values: sorted.map(x => x[1]) };
       }
 
       // ===== ЗАГРУЗКА ФАЙЛА =====
-      var uploadSection = document.getElementById('uploadSection');
-      var fileInput = document.getElementById('fileInput');
+      const uploadSection = document.getElementById('uploadSection');
+      const fileInput = document.getElementById('fileInput');
 
-      uploadSection.addEventListener('click', function() {
-        fileInput.click();
-      });
-
-      uploadSection.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadSection.style.borderColor = 'var(--text-accent)';
-      });
-
-      uploadSection.addEventListener('dragleave', function() {
-        uploadSection.style.borderColor = '';
-      });
-
-      uploadSection.addEventListener('drop', function(e) {
+      uploadSection.addEventListener('click', () => fileInput.click());
+      uploadSection.addEventListener('dragover', e => { e.preventDefault(); uploadSection.style.borderColor = 'var(--text-accent)'; });
+      uploadSection.addEventListener('dragleave', () => { uploadSection.style.borderColor = ''; });
+      uploadSection.addEventListener('drop', e => {
         e.preventDefault();
         uploadSection.style.borderColor = '';
-        var file = e.dataTransfer.files[0];
-        if (file) handleFile(file);
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
       });
-
-      fileInput.addEventListener('change', function(e) {
-        var file = e.target.files[0];
-        if (file) handleFile(file);
+      fileInput.addEventListener('change', e => {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
       });
 
       function handleFile(file) {
         showLoading();
-        var reader = new FileReader();
-        reader.onload = function(evt) {
+        const reader = new FileReader();
+        reader.onload = evt => {
           try {
-            var wb;
-            if (/\.csv$/i.test(file.name)) {
-              wb = XLSX.read(evt.target.result, { type: 'string' });
-            } else {
-              wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
-            }
-            var sheet = wb.Sheets[wb.SheetNames[0]];
-            var rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+            const wb = /\.csv$/i.test(file.name) ? XLSX.read(evt.target.result, { type: 'string' }) : XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
             state.rawData = rows;
             state.columns = Object.keys(rows[0] || {});
@@ -1178,8 +1186,7 @@
 
             if (!state.segmentField || !state.employeeField || !state.phoneField) {
               hideLoading();
-              toast('Не найдены нужные поля. Доступные: ' + state.columns.join(', '), 'error');
-              return;
+              return toast('Не найдены нужные поля. Доступные: ' + state.columns.join(', '), 'error');
             }
 
             state.loaded = true;
@@ -1192,47 +1199,41 @@
             buildPriorityPanel();
             getPanel('employees').innerHTML = '<div class="card"><div class="card-body"><div class="text-muted" style="text-align:center;padding:24px;">Примените фильтры</div></div></div>';
 
-            $$('.tab').forEach(function(t) { t.classList.remove('disabled'); t.disabled = false; });
+            $$('.tab').forEach(t => { t.classList.remove('disabled'); t.disabled = false; });
 
             hideLoading();
             toast('Загружено: ' + rows.length + ' строк');
-            updateMetrics();
-            updateCharts();
-            updatePreviewAll();
+            updateAll();
           } catch (err) {
             hideLoading();
             console.error(err);
             toast('Ошибка: ' + err.message, 'error');
           }
         };
-
-        if (/\.csv$/i.test(file.name)) {
-          reader.readAsText(file, 'utf-8');
-        } else {
-          reader.readAsArrayBuffer(file);
-        }
+        if (/\.csv$/i.test(file.name)) reader.readAsText(file, 'utf-8');
+        else reader.readAsArrayBuffer(file);
       }
 
       function initTabs() {
-        $$('.tab').forEach(function(tab) {
+        $$('.tab').forEach(tab => {
           tab.addEventListener('click', function() {
             if (this.classList.contains('disabled') || this.disabled) return;
-            $$('.tab').forEach(function(t) { t.classList.remove('active'); });
-            $$('.panel').forEach(function(p) { p.classList.remove('active'); });
+            $$('.tab').forEach(t => t.classList.remove('active'));
+            $$('.panel').forEach(p => p.classList.remove('active'));
             this.classList.add('active');
-            var panel = document.getElementById('panel-' + this.getAttribute('data-tab'));
+            const panel = document.getElementById('panel-' + this.getAttribute('data-tab'));
             if (panel) panel.classList.add('active');
           });
         });
       }
 
       // Экспорт
-      $$('#btnExport, #btnExportTop').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+      $$('#btnExport, #btnExportTop').forEach(btn => {
+        btn.addEventListener('click', () => {
           if (!state.finalRows.length) return toast('Соберите итог','warning');
-          var phones = Array.from(new Set(state.finalRows.map(function(r) { return normDigits(r[state.phoneField]); }).filter(function(v) { return v.length >= 10; })));
-          var blob = new Blob([phones.join('\n')], { type: 'text/plain;charset=utf-8' });
-          var a = document.createElement('a');
+          const phones = [...new Set(state.finalRows.map(r => normDigits(r[state.phoneField])).filter(v => v.length >= 10))];
+          const blob = new Blob([phones.join('\n')], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = 'compas_' + new Date().toISOString().slice(0,10) + '.txt';
           a.click();
@@ -1241,12 +1242,12 @@
         });
       });
 
-      $('#btnSave').addEventListener('click', function() {
+      $('#btnSave').addEventListener('click', () => {
         localStorage.setItem('compas_cfg', JSON.stringify({ selected: Array.from(state.selectedSegments), cap: state.employeeCap, time: Date.now() }));
         toast('Сохранено');
       });
 
-      $('#btnReset').addEventListener('click', function() {
+      $('#btnReset').addEventListener('click', () => {
         if (!confirm('Сбросить всё?')) return;
         state.rawData = [];
         state.candidateRows = [];
@@ -1264,24 +1265,22 @@
         getPanel('priority').innerHTML = '';
         getPanel('employees').innerHTML = '';
 
-        $$('.tab').forEach(function(t, i) {
+        $$('.tab').forEach((t,i) => {
           t.classList.remove('active');
           if (i === 0) t.classList.add('active');
           t.classList.add('disabled');
           t.disabled = true;
         });
 
-        $$('.panel').forEach(function(p) { p.classList.remove('active'); });
+        $$('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById('panel-segments').classList.add('active');
 
-        $('#btnExport').disabled = true;
-        $('#btnExportTop').disabled = true;
-        ['metricTotal','metricSegments','metricFilters','metricFinal','metricEmployees'].forEach(function(id) {
-          document.getElementById(id).textContent = '—';
-        });
+        $$('#btnExport, #btnExportTop').forEach(b => b.disabled = true);
+        ['metricTotal','metricSegments','metricFilters','metricFinal','metricEmployees'].forEach(id => document.getElementById(id).textContent = '—');
         $('#expPhones').textContent = '—';
         $('#expEmployees').textContent = '—';
-        $('#previewAllBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
+        $('#previewAllBody').innerHTML = '<tr><td colspan="100" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
+        $('#previewHeader').innerHTML = '';
         $('#previewCount').textContent = '0';
 
         updateCharts();
