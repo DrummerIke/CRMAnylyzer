@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Compas Flow • Campaign Builder</title>
   <link rel="icon" href="./logo.png" />
-  <!-- Библиотеки (при отсутствии интернета замените на локальные) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -65,7 +64,6 @@
       min-height: 100vh;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      letter-spacing: -0.01em;
     }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -466,18 +464,8 @@
     .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-default); border-top-color: var(--text-accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Дополнительные штрихи для продакшена */
-    .gradient-divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-default), transparent);
-      margin: 16px 0;
-    }
-    .badge {
-      display: inline-flex; align-items: center;
-      padding: 2px 10px; border-radius: 99px;
-      background: rgba(243,112,33,0.15); color: var(--text-accent);
-      font-size: 11px; font-weight: 700;
-    }
+    .gradient-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-default), transparent); margin: 16px 0; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 99px; background: rgba(243,112,33,0.15); color: var(--text-accent); font-size: 11px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -638,12 +626,10 @@
         return '';
       }
 
-      // ===== ДИНАМИЧЕСКОЕ ПРЕВЬЮ ПО ВСЕМ КОЛОНКАМ =====
       function updatePreview() {
         const rows = state.finalRows.length ? state.finalRows : state.candidateRows.length ? state.candidateRows : state.rawData;
         const allColumns = state.columns.length ? state.columns : (rows[0] ? Object.keys(rows[0]) : []);
         
-        // Заголовки таблицы
         const thead = $('#previewHeader');
         thead.innerHTML = '<tr>' + allColumns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr>';
         
@@ -658,7 +644,6 @@
         ).join('');
       }
 
-      // ===== СЕГМЕНТЫ =====
       function buildSegmentsPanel() {
         const field = state.segmentField;
         if (!field) return;
@@ -717,7 +702,6 @@
         });
       }
 
-      // ===== ФИЛЬТРЫ (БЕЗ ИЗМЕНЕНИЙ) =====
       const FILTER_TYPES = {
         'Телефон': { op: 'value', type: 'text', placeholder: '7999...' },
         'Общ.сумма': { op: 'number', type: 'number', placeholder: 'Сумма' },
@@ -858,7 +842,6 @@
         }
       }
 
-      // ===== ПРИОРИТЕТ С ВЫБОРОМ ПОЛЯ =====
       function buildPriorityPanel() {
         const availFields = state.columns.filter(c => c !== 'Номер карты' && c !== 'Заметки');
         getPanel('priority').innerHTML = '<div class="card"><div class="card-header"><div class="card-title"><div class="card-icon">3</div><div class="text-lg">Приоритет</div></div><div class="flex gap-2" style="align-items:center;">' +
@@ -922,7 +905,6 @@
         });
       }
 
-      // ===== СОТРУДНИКИ =====
       function buildEmployeesPanel() {
         if (!state.candidateRows.length) {
           getPanel('employees').innerHTML = '<div class="card"><div class="card-body"><div class="text-muted" style="text-align:center;padding:24px;">Примените фильтры</div></div></div>';
@@ -1069,7 +1051,6 @@
         });
       }
 
-      // ===== МОДАЛКИ =====
       function openModal(title, content) {
         $('#modalTitle').textContent = title;
         $('#modalBody').innerHTML = content;
@@ -1111,7 +1092,6 @@
         });
       });
 
-      // ===== ЧАРТЫ =====
       let charts = { segment: null, employee: null };
       function updateCharts() {
         const sData = makeChartData(state.candidateRows.length ? state.candidateRows : state.rawData, state.segmentField, 6);
@@ -1153,21 +1133,34 @@
         return { labels: sorted.map(x => x[0]), values: sorted.map(x => x[1]) };
       }
 
-      // ===== ЗАГРУЗКА ФАЙЛА =====
+      // ===== ЗАГРУЗКА ФАЙЛА (ПРОВЕРЕННАЯ) =====
       const uploadSection = document.getElementById('uploadSection');
       const fileInput = document.getElementById('fileInput');
 
-      uploadSection.addEventListener('click', () => fileInput.click());
-      uploadSection.addEventListener('dragover', e => { e.preventDefault(); uploadSection.style.borderColor = 'var(--text-accent)'; });
-      uploadSection.addEventListener('dragleave', () => { uploadSection.style.borderColor = ''; });
-      uploadSection.addEventListener('drop', e => {
-        e.preventDefault();
-        uploadSection.style.borderColor = '';
-        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-      });
-      fileInput.addEventListener('change', e => {
-        if (e.target.files[0]) handleFile(e.target.files[0]);
-      });
+      if (uploadSection && fileInput) {
+        uploadSection.addEventListener('click', () => fileInput.click());
+
+        uploadSection.addEventListener('dragover', e => {
+          e.preventDefault();
+          uploadSection.style.borderColor = 'var(--text-accent)';
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+          uploadSection.style.borderColor = '';
+        });
+
+        uploadSection.addEventListener('drop', e => {
+          e.preventDefault();
+          uploadSection.style.borderColor = '';
+          const file = e.dataTransfer.files[0];
+          if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', e => {
+          const file = e.target.files[0];
+          if (file) handleFile(file);
+        });
+      }
 
       function handleFile(file) {
         showLoading();
@@ -1227,7 +1220,6 @@
         });
       }
 
-      // Экспорт
       $$('#btnExport, #btnExportTop').forEach(btn => {
         btn.addEventListener('click', () => {
           if (!state.finalRows.length) return toast('Соберите итог','warning');
@@ -1256,9 +1248,11 @@
         state.employees = [];
         state.loaded = false;
 
-        uploadSection.classList.remove('loaded');
-        uploadSection.querySelector('.upload-bar-text').textContent = 'Перетащите файл или нажмите для выбора';
-        uploadSection.querySelector('.upload-bar-hint').textContent = '.xlsx / .csv';
+        if (uploadSection) {
+          uploadSection.classList.remove('loaded');
+          uploadSection.querySelector('.upload-bar-text').textContent = 'Перетащите файл или нажмите для выбора';
+          uploadSection.querySelector('.upload-bar-hint').textContent = '.xlsx / .csv';
+        }
 
         getPanel('segments').innerHTML = '<div class="card"><div class="card-body"><div class="text-muted" style="text-align:center;padding:24px;">Загрузите файл</div></div></div>';
         getPanel('filters').innerHTML = '';
@@ -1276,12 +1270,21 @@
         document.getElementById('panel-segments').classList.add('active');
 
         $$('#btnExport, #btnExportTop').forEach(b => b.disabled = true);
-        ['metricTotal','metricSegments','metricFilters','metricFinal','metricEmployees'].forEach(id => document.getElementById(id).textContent = '—');
-        $('#expPhones').textContent = '—';
-        $('#expEmployees').textContent = '—';
-        $('#previewAllBody').innerHTML = '<tr><td colspan="100" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
-        $('#previewHeader').innerHTML = '';
-        $('#previewCount').textContent = '0';
+        ['metricTotal','metricSegments','metricFilters','metricFinal','metricEmployees'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '—';
+        });
+        const expPhones = document.getElementById('expPhones');
+        const expEmployees = document.getElementById('expEmployees');
+        if (expPhones) expPhones.textContent = '—';
+        if (expEmployees) expEmployees.textContent = '—';
+
+        const previewAllBody = document.getElementById('previewAllBody');
+        const previewHeader = document.getElementById('previewHeader');
+        const previewCount = document.getElementById('previewCount');
+        if (previewAllBody) previewAllBody.innerHTML = '<tr><td colspan="100" style="text-align:center;color:var(--text-muted);padding:24px;">Нет данных</td></tr>';
+        if (previewHeader) previewHeader.innerHTML = '';
+        if (previewCount) previewCount.textContent = '0';
 
         updateCharts();
         toast('Сброшено', 'warning');
