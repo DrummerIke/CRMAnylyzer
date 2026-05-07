@@ -52,6 +52,16 @@
 
   function updateAll() { updateMetrics(); updatePreview(); updateCharts(); }
 
+
+  function normalizeSegmentValue(v){
+    const raw=String(v??'').trim();
+    if(!raw) return null;
+    const low=raw.toLowerCase();
+    if(['none','null','undefined','-','—','n/a','na','пусто','нет'].includes(low)) return null;
+    return raw;
+  }
+
+
   /* ===== ПЕРЕСЧЁТ candidateRows по текущим сегментам ===== */
   function recomputeCandidates() {
     // Применяем только сегментный фильтр (без условий из вкладки Фильтры)
@@ -60,14 +70,14 @@
       // пересчитываем с учётом активных filter-rule
       const filters = collectFilters();
       state.candidateRows = state.rawData.filter(row => {
-        if (!state.selectedSegments.has(String(row[state.segmentField]??'').trim()||'—')) return false;
+        if (!state.selectedSegments.has(normalizeSegmentValue(row[state.segmentField]))) return false;
         return filters.every(f => matchFilter(row, f));
       });
     } else {
       // только сегментный фильтр
       if (state.selectedSegments.size) {
         state.candidateRows = state.rawData.filter(row =>
-          state.selectedSegments.has(String(row[state.segmentField]??'').trim()||'—')
+          state.selectedSegments.has(normalizeSegmentValue(row[state.segmentField]))
         );
       } else {
         state.candidateRows = [];
@@ -82,7 +92,7 @@
   function updateMetrics() {
     q('#metricTotal').textContent = fmt(state.rawData.length)||'—';
     const afterSeg = state.segmentField && state.selectedSegments.size
-      ? state.rawData.filter(r=>state.selectedSegments.has(String(r[state.segmentField]??'').trim()||'—')).length : 0;
+      ? state.rawData.filter(r=>state.selectedSegments.has(normalizeSegmentValue(r[state.segmentField]))).length : 0;
     q('#metricSegments').textContent = fmt(afterSeg||state.rawData.length)||'—';
     q('#metricFilters').textContent = state.candidateRows.length ? fmt(state.candidateRows.length) : '—';
     q('#metricFinal').textContent = state.finalRows.length ? fmt(state.finalRows.length) : '—';
@@ -149,7 +159,7 @@
     grad.addColorStop(1,'#f37021');
     charts.emp = new Chart(ectx,{
       type:'bar',
-      data:{labels:eData.labels,datasets:[{data:eData.values,backgroundColor:eData.labels.map(()=>grad),hoverBackgroundColor:'#ff9b63',borderRadius:6,borderSkipped:false,barThickness:14,maxBarThickness:16}]},
+      data:{labels:eData.labels,datasets:[{data:eData.values,backgroundColor:eData.labels.map((_,i)=> i%2===0 ? '#f37021' : '#ff9b63'),hoverBackgroundColor:eData.labels.map((_,i)=> i%2===0 ? '#ff9b63' : '#f37021'),borderRadius:6,borderSkipped:false,barThickness:14,maxBarThickness:16}]},
       options:{animation:false,indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(20,18,18,0.95)',titleColor:'#fff',bodyColor:'#fff',borderColor:'rgba(243,112,33,0.35)',borderWidth:1,callbacks:{label:(ctx)=>` ${ctx.raw} задач`}}},scales:{x:{beginAtZero:true,ticks:{color:'rgba(255,255,255,0.55)',font:{size:10}},grid:{color:'rgba(255,255,255,0.08)'}},y:{ticks:{color:'rgba(255,255,255,0.85)',font:{size:11,weight:'600'}},grid:{display:false}}}}
     });
   }
@@ -158,11 +168,12 @@
   function buildSegmentsPanel() {
     const field = state.segmentField; if(!field) return;
     const map = new Map();
-    state.rawData.forEach(r=>{const v=String(r[field]??'').trim()||'—';map.set(v,(map.get(v)||0)+1);});
+    state.rawData.forEach(r=>{const v=normalizeSegmentValue(r[field]); if(!v) return; map.set(v,(map.get(v)||0)+1);});
     const groups = new Map();
     map.forEach((count,val)=>{const fw=val.split(/[\s_-]/)[0]||'—';if(!groups.has(fw))groups.set(fw,[]);groups.get(fw).push({val,count});});
-    const sortedGroups = Array.from(groups).sort((a,b)=>a[0].localeCompare(b[0],'ru'));
-    state.selectedSegments = new Set(map.keys());
+    const sortedGroups = Array.from(groups).sort((a,b)=>{const aVic=/vic/i.test(a[0]); const bVic=/vic/i.test(b[0]); if(aVic&&!bVic) return -1; if(!aVic&&bVic) return 1; return a[0].localeCompare(b[0],'ru');});
+    const orderedKeys=[...map.keys()].sort((a,b)=>{const aVic=/vic/i.test(a); const bVic=/vic/i.test(b); if(aVic&&!bVic) return -1; if(!aVic&&bVic) return 1; return a.localeCompare(b,'ru');});
+    state.selectedSegments = new Set(orderedKeys);
 
     let gh = '';
     sortedGroups.forEach(([gname,items])=>{
@@ -202,7 +213,7 @@
     });
 
     document.getElementById('btnSelAll').addEventListener('click',()=>{
-      state.selectedSegments = new Set(state.rawData.map(r=>String(r[state.segmentField]??'').trim()||'—'));
+      state.selectedSegments = new Set(state.rawData.map(r=>normalizeSegmentValue(r[state.segmentField])).filter(Boolean));
       qa('#panel-segments .seg-item').forEach(i=>i.classList.add('active'));
       recomputeCandidates();
     });
@@ -303,7 +314,7 @@
       setTimeout(async ()=>{
         const filters = collectFilters();
         state.candidateRows = await filterLargeData(state.rawData, row=>{
-          if(!state.selectedSegments.has(String(row[state.segmentField]??'').trim()||'—')) return false;
+          if(!state.selectedSegments.has(normalizeSegmentValue(row[state.segmentField]))) return false;
           return filters.every(f=>matchFilter(row,f));
         });
         state.filtersApplied = true;
